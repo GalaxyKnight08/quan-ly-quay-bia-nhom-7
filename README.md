@@ -13,7 +13,7 @@ Mở URL Vite hiển thị trong terminal. Trang đăng nhập nằm ở `/`, da
 
 Tài khoản demo:
 
-- Nhân viên: `staff@quaybia.vn` / `123456`
-- Quản lý: `manager@quaybia.vn` / `123456`
+- Nhân viên: `0900000001` / `123456`
+- Quản lý: `0900000002` / `123456`
 
 Ứng dụng hiện dùng `localStorage` cho phiên đăng nhập, đơn hàng và tồn kho. Chạy `npm run build` để tạo bản production đa trang trong `dist/`.

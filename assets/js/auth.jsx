@@ -1,33 +1,47 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { authService } from '../services/auth-service.js';
 import { validateLogin } from '../utils/validator.js';
 import { Icon, IconSprite } from './icons.jsx';
 
 export function AuthPage() {
   const [role, setRole] = useState('staff');
-  const [email, setEmail] = useState('staff@quaybia.vn');
+  const [phone, setPhone] = useState('0900000001');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const phoneInput = useRef(null);
+  const passwordInput = useRef(null);
 
   const selectRole = (nextRole) => {
     setRole(nextRole);
-    setEmail(nextRole === 'manager' ? 'manager@quaybia.vn' : 'staff@quaybia.vn');
+    setPhone(nextRole === 'manager' ? '0900000002' : '0900000001');
     setError('');
+    setSuccess('');
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const errors = validateLogin({ email, password });
+    if (isSubmitting) return;
+    const normalizedPhone = phone.trim();
+    const normalizedPassword = password.trim();
+    const errors = validateLogin({ phone: normalizedPhone, password: normalizedPassword });
     if (Object.keys(errors).length) {
-      setError(errors.email || errors.password);
+      setError(errors.phone || errors.password);
+      (errors.phone ? phoneInput : passwordInput).current?.focus();
       return;
     }
+    setError('');
+    setIsSubmitting(true);
     try {
-      await authService.login(email, password, role);
-      window.location.assign('./dashboard.html');
+      const user = await authService.login(normalizedPhone, normalizedPassword, role);
+      setSuccess(`Xin chào ${user.name}`);
+      window.setTimeout(() => window.location.assign('./dashboard.html'), 1200);
     } catch (loginError) {
       setError(loginError.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -45,12 +59,13 @@ export function AuthPage() {
           <button className="role-option" type="button" data-role="manager" aria-pressed={role === 'manager'} onClick={() => selectRole('manager')}><Icon name="shield" /> Quản lý</button>
         </div>
         <form onSubmit={handleSubmit} noValidate>
-          <div className="field"><label htmlFor="email">Email</label><input id="email" name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" placeholder="ten@quaybia.vn" required /></div>
-          <div className="field"><label htmlFor="password">Mật khẩu</label><div className="password-wrap"><input id="password" name="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" placeholder="Nhập mật khẩu" required /><button className="password-toggle" type="button" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowPassword((value) => !value)}><Icon name="eye" /></button></div></div>
+          <div className="field"><label htmlFor="phone">Số điện thoại</label><input ref={phoneInput} id="phone" name="phone" type="tel" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} autoComplete="username" placeholder="Nhập số điện thoại" required /></div>
+          <div className="field"><label htmlFor="password">Mật khẩu</label><div className="password-wrap"><input ref={passwordInput} id="password" name="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" placeholder="Nhập mật khẩu" required /><button className="password-toggle" type="button" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowPassword((value) => !value)}><Icon name="eye" /></button></div></div>
           <p className="form-error" role="alert" aria-live="polite">{error}</p>
-          <button className="submit-button" type="submit">Vào hệ thống <Icon name="arrow" /></button>
+          {success && <p className="form-success" role="status">{success}</p>}
+          <button className="submit-button" type="submit" disabled={isSubmitting || Boolean(success)}>{isSubmitting ? <><span className="loading-spinner" />Đang đăng nhập...</> : success ? 'Đăng nhập thành công' : <>Vào hệ thống <Icon name="arrow" /></>}</button>
         </form>
-        <p className="demo-note"><strong>Tài khoản dùng thử</strong><br />Nhân viên: staff@quaybia.vn · Quản lý: manager@quaybia.vn<br />Mật khẩu: 123456</p>
+        <p className="demo-note"><strong>Tài khoản dùng thử</strong><br />Nhân viên: 0900000001 · Quản lý: 0900000002<br />Mật khẩu: 123456</p>
       </div>
     </section>
   </>;

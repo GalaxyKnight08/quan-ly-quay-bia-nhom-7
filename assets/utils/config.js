@@ -5,7 +5,7 @@ export const APP_CONFIG = Object.freeze({
   apiBaseUrl: '',
   storagePrefix: 'quanlyquaybia',
   demoAccounts: [
-    { email: 'staff@quaybia.vn', password: '123456', role: 'staff', name: 'Nguyễn Minh Anh' },
-    { email: 'manager@quaybia.vn', password: '123456', role: 'manager', name: 'Trần Hoàng Nam' }
+    { phone: '0900000001', password: '123456', role: 'staff', name: 'Nguyễn Minh Anh' },
+    { phone: '0900000002', password: '123456', role: 'manager', name: 'Trần Hoàng Nam' }
   ]
 });
