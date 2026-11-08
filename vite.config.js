@@ -4,6 +4,9 @@ import { defineConfig } from 'vite';
 const root = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
+  esbuild: {
+    jsx: 'automatic'
+  },
   build: {
     rollupOptions: {
       input: {
