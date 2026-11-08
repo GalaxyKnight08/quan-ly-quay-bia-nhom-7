@@ -47,7 +47,7 @@ export function AuthPage() {
   return <>
     <main className="login-art">
       <a className="brand-mark login-brand" href="./index.html" aria-label="Quầy Bia, trang chủ"><span className="brand-symbol"><i className="icon fa-solid fa-beer-mug-empty" aria-hidden="true" /></span><span>quầy bia<span style={{ color: 'var(--lime)' }}>.</span></span></a>
-      <div className="login-art-copy"><span className="eyebrow">Không gian vận hành</span><h1>Ca bán hàng, trong tầm tay.</h1><p>Đơn hàng, tồn kho và nhịp vận hành quầy được gói gọn trong một màn hình.</p><div className="login-stat"><span className="live-dot" /> Hệ thống đang hoạt động</div></div>
+      <div className="login-art-copy"><span className="eyebrow">Không gian vận hành</span><p>Đơn hàng, tồn kho và vận hành quầy</p><div className="login-stat"></div></div>
       <div className="login-art-foot">Quầy Bia · Nền tảng quản lý bán hàng</div>
     </main>
     <section className="login-panel" aria-labelledby="login-title">
