@@ -4,7 +4,6 @@ import { sheetApi } from '../../services/sheet-api.js';
 import { can } from '../../utils/permissions.js';
 import { formatMoney, formatTime, initials } from '../../utils/helper.js';
 import { validateOrder } from '../../utils/validator.js';
-import { Icon, IconSprite } from './icons.jsx';
 import { DashboardLayout } from './layout.jsx';
 
 export function DashboardPage() {
@@ -40,7 +39,7 @@ export function DashboardPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [modal]);
 
-  if (!data) return <><IconSprite /><div className="page-content"><p role="status">Đang tải dữ liệu quầy...</p></div></>;
+  if (!data) return <div className="page-content"><p role="status">Đang tải dữ liệu quầy...</p></div>;
 
   const totalRevenue = data.orders.reduce((sum, order) => sum + order.amount, 0);
   const totalUnits = data.orders.reduce((sum, order) => sum + order.items, 0);
@@ -68,15 +67,14 @@ export function DashboardPage() {
   };
 
   return <>
-    <IconSprite />
     <DashboardLayout user={user} orderCount={data.orders.length} lowStockCount={lowStockCount} onNavigate={navigate}>
       <main className="page-content" id="overview">
-        <div className="page-heading"><div><h1>Tổng quan</h1><p>Chào <strong>{user.name}</strong>, đây là tình hình quầy hôm nay.</p></div><button className="button-primary" type="button" onClick={() => setModal({ type: 'order' })}><Icon name="plus" />Tạo đơn hàng</button></div>
+        <div className="page-heading"><div><h1>Tổng quan</h1><p>Chào <strong>{user.name}</strong>, đây là tình hình quầy hôm nay.</p></div><button className="button-primary" type="button" onClick={() => setModal({ type: 'order' })}><i className="icon fa-solid fa-plus" aria-hidden="true" />Tạo đơn hàng</button></div>
         <section className="metric-grid" aria-label="Chỉ số trong ngày">
-          <article className="metric-card"><div className="metric-top">Doanh thu hôm nay<span className="metric-icon"><Icon name="cash" /></span></div><div className="metric-value">{formatMoney(totalRevenue)}</div><div className="metric-foot"><span className="trend-up"><Icon name="arrow-up" style={{ width: 11, height: 11, verticalAlign: -2 }} /> 12,8%</span> so với hôm qua</div></article>
-          <article className="metric-card"><div className="metric-top">Đơn hàng<span className="metric-icon"><Icon name="receipt" /></span></div><div className="metric-value">{data.orders.length}</div><div className="metric-foot"><span className="trend-up">{data.orders.length}</span> đơn trong ca</div></article>
-          <article className="metric-card"><div className="metric-top">Sản phẩm đã bán<span className="metric-icon"><Icon name="beer" /></span></div><div className="metric-value">{totalUnits}</div><div className="metric-foot">Sản phẩm trong hôm nay</div></article>
-          <article className="metric-card"><div className="metric-top">Giá trị trung bình<span className="metric-icon amber"><Icon name="chart" /></span></div><div className="metric-value">{formatMoney(data.orders.length ? Math.round(totalRevenue / data.orders.length) : 0)}</div><div className="metric-foot">Trên mỗi đơn hàng</div></article>
+          <article className="metric-card"><div className="metric-top">Doanh thu hôm nay<span className="metric-icon"><i className="icon fa-solid fa-money-bill-wave" aria-hidden="true" /></span></div><div className="metric-value">{formatMoney(totalRevenue)}</div><div className="metric-foot"><span className="trend-up"><i className="icon fa-solid fa-arrow-trend-up" style={{ width: 11, height: 11, fontSize: 11, verticalAlign: -2 }} aria-hidden="true" /> 12,8%</span> so với hôm qua</div></article>
+          <article className="metric-card"><div className="metric-top">Đơn hàng<span className="metric-icon"><i className="icon fa-solid fa-receipt" aria-hidden="true" /></span></div><div className="metric-value">{data.orders.length}</div><div className="metric-foot"><span className="trend-up">{data.orders.length}</span> đơn trong ca</div></article>
+          <article className="metric-card"><div className="metric-top">Sản phẩm đã bán<span className="metric-icon"><i className="icon fa-solid fa-beer-mug-empty" aria-hidden="true" /></span></div><div className="metric-value">{totalUnits}</div><div className="metric-foot">Sản phẩm trong hôm nay</div></article>
+          <article className="metric-card"><div className="metric-top">Giá trị trung bình<span className="metric-icon amber"><i className="icon fa-solid fa-chart-line" aria-hidden="true" /></span></div><div className="metric-value">{formatMoney(data.orders.length ? Math.round(totalRevenue / data.orders.length) : 0)}</div><div className="metric-foot">Trên mỗi đơn hàng</div></article>
         </section>
         <div className="dashboard-grid">
           <section className="panel" aria-labelledby="sales-title"><header className="panel-header"><div><h2 className="panel-title" id="sales-title">Doanh thu trong ngày</h2><div className="panel-subtitle">Biến động doanh thu theo giờ</div></div><span className="legend">Hôm nay</span></header>
@@ -85,18 +83,18 @@ export function DashboardPage() {
               <div className="chart-labels"><span>08:00</span><span>10:00</span><span>12:00</span><span>14:00</span><span>16:00</span><span>18:00</span><span>20:00</span></div>
             </div>
           </section>
-          <section className="panel inventory-panel" id="inventory-panel" aria-labelledby="inventory-title"><header className="panel-header"><div><h2 className="panel-title" id="inventory-title">Tồn kho nổi bật</h2><div className="panel-subtitle">{lowStockCount ? `${lowStockCount} sản phẩm sắp hết` : 'Tồn kho ổn định'}</div></div><button className="icon-button" type="button" aria-label="Điều chỉnh tồn kho" title="Điều chỉnh tồn kho" onClick={() => setModal({ type: 'stock' })}><Icon name="edit" /></button></header>
+          <section className="panel inventory-panel" id="inventory-panel" aria-labelledby="inventory-title"><header className="panel-header"><div><h2 className="panel-title" id="inventory-title">Tồn kho nổi bật</h2><div className="panel-subtitle">{lowStockCount ? `${lowStockCount} sản phẩm sắp hết` : 'Tồn kho ổn định'}</div></div><button className="icon-button" type="button" aria-label="Điều chỉnh tồn kho" title="Điều chỉnh tồn kho" onClick={() => setModal({ type: 'stock' })}><i className="icon fa-solid fa-pen-to-square" aria-hidden="true" /></button></header>
             <div className="panel-body"><div className="inventory-list">{data.products.map((product) => {
               const percentage = Math.min(100, Math.round(product.stock / product.capacity * 100));
-              return <div className="inventory-row" key={product.id}><span className="product-thumb" aria-hidden="true"><Icon name="beer" /></span><span><span className="product-name">{product.name}</span><span className="product-sub">{product.category}</span></span><span className="stock-number">{product.stock} lon<div className="stock-bar"><span className={percentage < 25 ? 'low' : ''} style={{ width: `${percentage}%` }} /></div></span></div>;
+              return <div className="inventory-row" key={product.id}><span className="product-thumb" aria-hidden="true"><i className="icon fa-solid fa-beer-mug-empty" /></span><span><span className="product-name">{product.name}</span><span className="product-sub">{product.category}</span></span><span className="stock-number">{product.stock} lon<div className="stock-bar"><span className={percentage < 25 ? 'low' : ''} style={{ width: `${percentage}%` }} /></div></span></div>;
             })}</div></div>
           </section>
         </div>
-        <section className="panel table-panel" id="orders-panel" aria-labelledby="orders-title"><header className="panel-header"><div><h2 className="panel-title" id="orders-title">Đơn hàng gần đây</h2><div className="panel-subtitle">Các giao dịch mới nhất trong ca</div></div><div className="table-tools"><label className="search-box"><Icon name="search" /><span className="sr-only">Tìm đơn hàng</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm đơn hàng" /></label><label className="sr-only" htmlFor="status-filter">Lọc trạng thái</label><select className="filter-select" id="status-filter" value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">Tất cả</option><option value="Hoàn tất">Hoàn tất</option><option value="Đang xử lý">Đang xử lý</option></select></div></header>
+        <section className="panel table-panel" id="orders-panel" aria-labelledby="orders-title"><header className="panel-header"><div><h2 className="panel-title" id="orders-title">Đơn hàng gần đây</h2><div className="panel-subtitle">Các giao dịch mới nhất trong ca</div></div><div className="table-tools"><label className="search-box"><i className="icon fa-solid fa-magnifying-glass" aria-hidden="true" /><span className="sr-only">Tìm đơn hàng</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm đơn hàng" /></label><label className="sr-only" htmlFor="status-filter">Lọc trạng thái</label><select className="filter-select" id="status-filter" value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">Tất cả</option><option value="Hoàn tất">Hoàn tất</option><option value="Đang xử lý">Đang xử lý</option></select></div></header>
           <div className="table-wrap"><table><thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Sản phẩm</th><th>Thanh toán</th><th>Thời gian</th><th>Trạng thái</th></tr></thead><tbody>{visibleOrders.length ? visibleOrders.map((order) => <tr key={order.id}><td className="order-code">{order.id}</td><td><span className="customer-cell"><span className="mini-avatar">{initials(order.customer)}</span>{order.customer}</span></td><td>{order.items} sản phẩm</td><td><strong>{formatMoney(order.amount)}</strong></td><td>{formatTime(order.time)}</td><td><span className={`status-pill${order.status === 'Đang xử lý' ? ' pending' : ''}`}>{order.status}</span></td></tr>) : <tr><td className="empty-state" colSpan="6">Không tìm thấy đơn hàng phù hợp.</td></tr>}</tbody></table></div>
           <footer className="table-footer"><span>{visibleOrders.length} đơn hàng</span><span>Dữ liệu được lưu trên thiết bị</span></footer>
         </section>
-        <div className="quick-actions"><button className="quick-action" type="button" onClick={() => setModal({ type: 'order' })}><span className="metric-icon"><Icon name="plus" /></span><span><strong>Tạo đơn mới</strong><small>Ghi nhận giao dịch</small></span></button><button className="quick-action" type="button" onClick={() => navigate('inventory')}><span className="metric-icon amber"><Icon name="box" /></span><span><strong>Kiểm tra kho</strong><small>Xem lượng hàng còn</small></span></button></div>
+        <div className="quick-actions"><button className="quick-action" type="button" onClick={() => setModal({ type: 'order' })}><span className="metric-icon"><i className="icon fa-solid fa-plus" aria-hidden="true" /></span><span><strong>Tạo đơn mới</strong><small>Ghi nhận giao dịch</small></span></button><button className="quick-action" type="button" onClick={() => navigate('inventory')}><span className="metric-icon amber"><i className="icon fa-solid fa-box" aria-hidden="true" /></span><span><strong>Kiểm tra kho</strong><small>Xem lượng hàng còn</small></span></button></div>
       </main>
     </DashboardLayout>
     {modal?.type === 'order' && <OrderModal onClose={() => setModal(null)} onSubmit={createOrder} user={user} />}
@@ -106,7 +104,7 @@ export function DashboardPage() {
 }
 
 function ModalFrame({ title, onClose, children }) {
-  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header className="modal-header"><h2 id="modal-title">{title}</h2><button className="modal-close" type="button" aria-label="Đóng" onClick={onClose}><Icon name="close" /></button></header>{children}</section></div>;
+  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header className="modal-header"><h2 id="modal-title">{title}</h2><button className="modal-close" type="button" aria-label="Đóng" onClick={onClose}><i className="icon fa-solid fa-xmark" aria-hidden="true" /></button></header>{children}</section></div>;
 }
 
 function OrderModal({ onClose, onSubmit, user }) {
