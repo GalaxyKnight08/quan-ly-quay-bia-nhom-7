@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { authService } from '../services/auth-service.js';
-import { roleLabel } from '../utils/permissions.js';
-import { formatDate, initials } from '../utils/helper.js';
+import { authService } from '../../services/auth-service.js';
+import { roleLabel } from '../../utils/permissions.js';
+import { formatDate, initials } from '../../utils/helper.js';
 import { Icon } from './icons.jsx';
 
 const links = [

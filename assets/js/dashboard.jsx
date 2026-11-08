@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { authService } from '../services/auth-service.js';
-import { sheetApi } from '../services/sheet-api.js';
-import { can } from '../utils/permissions.js';
-import { formatMoney, formatTime, initials } from '../utils/helper.js';
-import { validateOrder } from '../utils/validator.js';
+import { authService } from '../../services/auth-service.js';
+import { sheetApi } from '../../services/sheet-api.js';
+import { can } from '../../utils/permissions.js';
+import { formatMoney, formatTime, initials } from '../../utils/helper.js';
+import { validateOrder } from '../../utils/validator.js';
 import { Icon, IconSprite } from './icons.jsx';
 import { DashboardLayout } from './layout.jsx';
 

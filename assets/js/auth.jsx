@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
-import { authService } from '../services/auth-service.js';
-import { validateLogin } from '../utils/validator.js';
+import { authService } from '../../services/auth-service.js';
+import { validateLogin } from '../../utils/validator.js';
 import { Icon, IconSprite } from './icons.jsx';
 
 export function AuthPage() {

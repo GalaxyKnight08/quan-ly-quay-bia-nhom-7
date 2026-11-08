@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { authService } from '../services/auth-service.js';
+import { authService } from '../../services/auth-service.js';
 
 export function RouteGuard({ children, guestOnly = false }) {
   const user = authService.currentUser();
