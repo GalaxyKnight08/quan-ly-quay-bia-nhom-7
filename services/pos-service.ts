@@ -1,13 +1,14 @@
-import { cacheService } from './cache-service.js';
+import { cacheService } from './cache-service.ts';
+import type { AdjustmentAction, Area, CompletedBill, DiningTable, MenuItem, OrderLine, OrderRound, PaymentDetails, PosData, TableStatus } from '../utils/types.ts';
 
 const STORAGE_KEY = 'pos-demo-data';
-const AREAS = [
+const AREAS: Area[] = [
   { id: 'inside', name: 'Trong nhà', firstTable: 1, count: 30 },
   { id: 'yard', name: 'Sân vườn', firstTable: 31, count: 30 },
   { id: 'upstairs', name: 'Tầng 2', firstTable: 61, count: 20 }
 ];
 
-export const MENU = [
+export const MENU: MenuItem[] = [
   { id: 'beer-glass', shortcut: 'b', name: 'Bia hơi cốc', category: 'Bia', price: 15000, station: 'Đồ uống' },
   { id: 'beer-pitcher', shortcut: 'bc', name: 'Bia hơi ca', category: 'Bia', price: 42000, station: 'Đồ uống' },
   { id: 'beer-tower', shortcut: 'tb', name: 'Tháp bia 3L', category: 'Bia', price: 180000, station: 'Đồ uống' },
@@ -18,39 +19,40 @@ export const MENU = [
   { id: 'peanuts', shortcut: 'lr', name: 'Lạc rang', category: 'Đồ nhắm', price: 25000, station: 'Bếp lạnh' }
 ];
 
-const createInitialData = () => {
+const createInitialData = (): PosData => {
   const tables = AREAS.flatMap((area) => Array.from({ length: area.count }, (_, index) => {
     const number = area.firstTable + index;
     const isOccupied = number <= 25;
+    const status: TableStatus = !isOccupied ? 'empty' : number > 20 ? 'provisional' : 'occupied';
     return {
       id: number,
       areaId: area.id,
-      status: !isOccupied ? 'empty' : number > 20 ? 'provisional' : 'occupied',
+      status,
       guestCount: isOccupied ? (number % 5) + 2 : 0,
       openedAt: isOccupied ? new Date(Date.now() - (number % 90 + 15) * 60000).toISOString() : null,
       total: isOccupied ? 150000 + (number - 1) * 8900 : 0,
       rounds: []
     };
   }));
-  return { areas: AREAS, tables };
+  return { areas: AREAS, tables, completedBills: [] };
 };
 
-const save = (data) => {
+const save = (data: PosData): PosData => {
   cacheService.set(STORAGE_KEY, data);
   return data;
 };
 
 export const posService = {
   getData() {
-    const data = cacheService.get(STORAGE_KEY);
-    if (!data) return save({ ...createInitialData(), completedBills: [] });
+    const data = cacheService.get<PosData>(STORAGE_KEY);
+    if (!data) return save(createInitialData());
     if (!data.completedBills) {
       data.completedBills = [];
       return save(data);
     }
     return data;
   },
-  openTable(tableId, guestCount) {
+  openTable(tableId: number, guestCount: number | null) {
     const data = this.getData();
     const table = data.tables.find((item) => item.id === tableId);
     if (!table) throw new Error('Không tìm thấy bàn.');
@@ -62,22 +64,27 @@ export const posService = {
     table.rounds = [];
     return save(data);
   },
-  addRound(tableId, lines, staffName) {
+  addRound(tableId: number, lines: OrderLine[], staffName: string) {
     const data = this.getData();
     const table = data.tables.find((item) => item.id === tableId);
     if (!table || table.status === 'empty') throw new Error('Phiên bàn không còn mở.');
     if (!lines.length) throw new Error('Chưa có món trong lượt đang nhập.');
-    const round = {
+    const pricedLines = lines.map((line) => {
+      const menuItem = MENU.find((item) => item.id === line.id);
+      if (!menuItem) throw new Error('Không tìm thấy món trong thực đơn.');
+      return { ...line, name: menuItem.name, category: menuItem.category, station: menuItem.station, price: menuItem.price };
+    });
+    const round: OrderRound = {
       id: `${Date.now()}`,
       sentAt: new Date().toISOString(),
       staffName,
-      lines: lines.map((line) => ({ ...line, price: MENU.find((item) => item.id === line.id).price }))
+      lines: pricedLines
     };
     table.rounds.push(round);
     table.total += round.lines.reduce((sum, line) => sum + line.price * line.quantity, 0);
     return save(data);
   },
-  markProvisional(tableId) {
+  markProvisional(tableId: number) {
     const data = this.getData();
     const table = data.tables.find((item) => item.id === tableId);
     if (!table || table.status === 'empty') throw new Error('Phiên bàn không còn mở.');
@@ -85,7 +92,7 @@ export const posService = {
     table.provisionalCount = (table.provisionalCount || 0) + 1;
     return save(data);
   },
-  moveTable(sourceId, targetId, merge = false) {
+  moveTable(sourceId: number, targetId: number, merge = false) {
     const data = this.getData();
     const source = data.tables.find((item) => item.id === sourceId);
     const target = data.tables.find((item) => item.id === targetId);
@@ -103,31 +110,31 @@ export const posService = {
     Object.assign(source, { status: 'empty', guestCount: 0, openedAt: null, total: 0, rounds: [], provisionalCount: 0 });
     return save(data);
   },
-  adjustOrderLine(tableId, roundId, lineId, action, quantity, discountAmount = 0) {
+  adjustOrderLine(tableId: number, roundId: string, lineId: string, action: AdjustmentAction, quantity: number, discountAmount = 0, reason = '', note = '') {
     const data = this.getData();
     const table = data.tables.find((item) => item.id === tableId);
     const round = table?.rounds.find((item) => item.id === roundId);
     const line = round?.lines.find((item) => item.id === lineId && !item.adjustment);
-    if (!line) throw new Error('Không tìm thấy món đã gửi.');
+    if (!table || !round || !line) throw new Error('Không tìm thấy món đã gửi.');
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > line.quantity) throw new Error('Số lượng điều chỉnh không hợp lệ.');
     if (action === 'void') {
       line.quantity -= quantity;
       table.total = Math.max(0, table.total - line.price * quantity);
-      round.lines.push({ id: `void-${Date.now()}`, name: `Hủy: ${line.name}`, quantity: -quantity, price: line.price, adjustment: true });
+      round.lines.push({ id: `void-${Date.now()}`, name: `Hủy: ${line.name}`, quantity: -quantity, price: line.price, adjustment: true, reason, note });
     } else {
       const amount = Math.min(Math.max(0, discountAmount), line.price * quantity);
       if (!amount) throw new Error('Số tiền giảm phải lớn hơn 0.');
       table.total = Math.max(0, table.total - amount);
-      round.lines.push({ id: `discount-${Date.now()}`, name: `Giảm: ${line.name}`, quantity: -1, price: amount, adjustment: true });
+      round.lines.push({ id: `discount-${Date.now()}`, name: `Giảm: ${line.name}`, quantity: -1, price: amount, adjustment: true, reason, note });
     }
     return save(data);
   },
-  closeTable(tableId, payment = {}) {
+  closeTable(tableId: number, payment: Partial<PaymentDetails> = {}) {
     const data = this.getData();
     const table = data.tables.find((item) => item.id === tableId);
     if (!table || table.status === 'empty') throw new Error('Phiên bàn không còn mở.');
     const paidAt = new Date().toISOString();
-    data.completedBills.unshift({
+    const bill: CompletedBill = {
       billNo: `HD-${Date.now()}`,
       tableId,
       paidAt,
@@ -137,7 +144,8 @@ export const posService = {
       change: payment.change ?? 0,
       payments: payment.payments ?? [],
       lines: table.rounds.flatMap((round) => round.lines.map((line) => ({ ...line })))
-    });
+    };
+    data.completedBills.unshift(bill);
     Object.assign(table, { status: 'empty', guestCount: 0, openedAt: null, total: 0, rounds: [], provisionalCount: 0 });
     return save(data);
   }

@@ -1,9 +1,26 @@
-import { useMemo, useState } from 'react';
-import { formatMoney } from '../../utils/helper.js';
+import { useMemo, useState, type ChangeEvent, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from 'react';
+import { formatMoney } from '../../utils/helper.ts';
+import type { User } from '../../utils/types.ts';
 
 const money = formatMoney;
 
-const datasets = {
+type FieldType = 'text' | 'number' | 'date' | 'time' | 'password' | 'select';
+type FeatureField = [label: string, name: string, type?: FieldType, options?: string[]];
+type FeatureRecord = Record<string, string | number>;
+interface DatasetTab {
+  id: string;
+  label: string;
+  columns: string[];
+  fields: FeatureField[];
+  rows: FeatureRecord[];
+}
+interface DatasetConfig {
+  title: string;
+  subtitle: string;
+  tabs: DatasetTab[];
+}
+
+const datasets: Record<string, DatasetConfig> = {
   menu: {
     title: 'Thực đơn & khu chế biến',
     subtitle: 'FR-11 · Quản lý món, nhóm món và khu chế biến',
@@ -88,8 +105,8 @@ const datasets = {
   }
 };
 
-const displayValue = (value) => typeof value === 'number' && value >= 1000 ? money(value) : value;
-const tableFields = {
+const displayValue = (value: string | number | undefined) => typeof value === 'number' && value >= 1000 ? money(value) : value;
+const tableFields: Record<string, string[]> = {
   items: ['name', 'shortcut', 'category', 'price', 'station', 'status'],
   groups: ['name', 'order', 'count', 'status'],
   stations: ['name', 'count', 'status'],
@@ -102,7 +119,15 @@ const tableFields = {
   'top-items': ['rank', 'name', 'quantity', 'amount', 'share']
 };
 
-export function FRPage({ view, user, shiftOpen, setShiftOpen, onToast }) {
+interface FRPageProps {
+  view: string;
+  user: User;
+  shiftOpen: boolean;
+  setShiftOpen: Dispatch<SetStateAction<boolean>>;
+  onToast: (message: string) => void;
+}
+
+export function FRPage({ view, user, shiftOpen, setShiftOpen, onToast }: FRPageProps) {
   if (view === 'shifts') return <ShiftPage user={user} isOpen={shiftOpen} setIsOpen={setShiftOpen} onToast={onToast} />;
   if (view === 'taps') return <TapPage onToast={onToast} />;
   if (view === 'kegLoss') return <KegLossPage />;
@@ -111,28 +136,28 @@ export function FRPage({ view, user, shiftOpen, setShiftOpen, onToast }) {
   return <ReportsPage />;
 }
 
-function PageHeading({ title, subtitle, action }) {
+function PageHeading({ title, subtitle, action }: { title: string; subtitle: string; action?: ReactNode }) {
   return <div className="page-heading"><div><span className="eyebrow">Giao diện theo đặc tả</span><h1>{title}</h1><p>{subtitle}</p></div>{action}</div>;
 }
 
-function RecordsPage({ config, onToast, filters = false }) {
+function RecordsPage({ config, onToast, filters = false }: { config: DatasetConfig; onToast: (message: string) => void; filters?: boolean }) {
   const [tabId, setTabId] = useState(config.tabs[0].id);
-  const [records, setRecords] = useState(() => Object.fromEntries(config.tabs.map((tab) => [tab.id, tab.rows])));
-  const [editing, setEditing] = useState(null);
+  const [records, setRecords] = useState<Record<string, FeatureRecord[]>>(() => Object.fromEntries(config.tabs.map((tab) => [tab.id, tab.rows])));
+  const [editing, setEditing] = useState<{ index?: number; record?: FeatureRecord } | null>(null);
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('quantity');
   const [dateError, setDateError] = useState('');
-  const activeTab = config.tabs.find((tab) => tab.id === tabId);
+  const activeTab = config.tabs.find((tab) => tab.id === tabId) ?? config.tabs[0];
   const visibleRecords = useMemo(() => {
     const filtered = records[tabId].filter((record) => Object.values(record).join(' ').toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi')));
     if (config.title.includes('Món bán')) {
-      const numericValue = (record) => sortBy === 'quantity' ? Number(String(record[sortBy]).replaceAll('.', '')) : Number(record[sortBy]);
+      const numericValue = (record: FeatureRecord) => sortBy === 'quantity' ? Number(String(record[sortBy]).replaceAll('.', '')) : Number(record[sortBy]);
       return filtered.slice().sort((left, right) => numericValue(right) - numericValue(left));
     }
     return filtered;
   }, [config.title, query, records, sortBy, tabId]);
 
-  const saveRecord = (record) => {
+  const saveRecord = (record: FeatureRecord) => {
     setRecords((current) => {
       const currentRows = current[tabId];
       if (editing?.index !== undefined) return { ...current, [tabId]: currentRows.map((row, index) => index === editing.index ? { ...row, ...record } : row) };
@@ -168,10 +193,18 @@ function RecordsPage({ config, onToast, filters = false }) {
   </main>;
 }
 
-function RecordDialog({ title, fields, initial = {}, onClose, onSave }) {
-  const handleSubmit = (event) => {
+interface RecordDialogProps {
+  title: string;
+  fields: FeatureField[];
+  initial?: FeatureRecord;
+  onClose: () => void;
+  onSave: (record: FeatureRecord) => void;
+}
+
+function RecordDialog({ title, fields, initial = {}, onClose, onSave }: RecordDialogProps) {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const values = Object.fromEntries(new FormData(event.currentTarget));
+    const values = Object.fromEntries(new FormData(event.currentTarget)) as FeatureRecord;
     fields.forEach(([, key, type]) => {
       if (type === 'number') values[key] = Number(values[key]);
     });
@@ -184,7 +217,7 @@ function RecordDialog({ title, fields, initial = {}, onClose, onSave }) {
         <div className="modal-body feature-form">{fields.map(([label, name, type, options]) => <label className="modal-field" key={name}>
           <span>{label}</span>
           {type === 'select'
-            ? <select name={name} defaultValue={initial[name] || options[0]}>{options.map((option) => <option key={option}>{option}</option>)}</select>
+            ? <select name={name} defaultValue={initial[name] || options?.[0]}>{options?.map((option) => <option key={option}>{option}</option>)}</select>
             : <input name={name} type={type === 'number' ? 'number' : type === 'date' ? 'date' : type === 'time' ? 'time' : type === 'password' ? 'password' : 'text'} defaultValue={initial[name] ?? ''} required={name !== 'password' && name !== 'pin'} />}
         </label>)}</div>
         <footer className="modal-footer"><button className="button-secondary" type="button" onClick={onClose}>Hủy</button><button className="button-primary" type="submit">Lưu</button></footer>
@@ -193,11 +226,11 @@ function RecordDialog({ title, fields, initial = {}, onClose, onSave }) {
   </div>;
 }
 
-function validateReportPeriod(setError) {
-  const from = document.getElementById('report-from')?.value;
-  const to = document.getElementById('report-to')?.value;
+function validateReportPeriod(setError: Dispatch<SetStateAction<string>>) {
+  const from = document.querySelector<HTMLInputElement>('#report-from')?.value;
+  const to = document.querySelector<HTMLInputElement>('#report-to')?.value;
   if (!from || !to) return;
-  const days = (new Date(`${to}T00:00:00`) - new Date(`${from}T00:00:00`)) / 86400000;
+  const days = (new Date(`${to}T00:00:00`).getTime() - new Date(`${from}T00:00:00`).getTime()) / 86400000;
   setError(days < 0 ? 'Ngày bắt đầu phải trước ngày kết thúc.' : days > 30 ? 'Khoảng ngày không được vượt quá 31 ngày.' : '');
 }
 
@@ -209,7 +242,7 @@ function TopItemsCharts() {
   </div>;
 }
 
-function ShiftPage({ user, isOpen, setIsOpen, onToast }) {
+function ShiftPage({ user, isOpen, setIsOpen, onToast }: { user: User; isOpen: boolean; setIsOpen: Dispatch<SetStateAction<boolean>>; onToast: (message: string) => void }) {
   const [countedCash, setCountedCash] = useState('');
   const expectedCash = 2500000 + 6820000;
   return <main className="page-content feature-content"><PageHeading title="Mở / đóng ca" subtitle="FR-09 · Theo dõi tiền đầu ca, doanh thu và chênh lệch" action={<span className={`status-pill${isOpen ? '' : ' pending'}`}>{isOpen ? 'Ca đang mở' : 'Chưa mở ca'}</span>} />
@@ -220,10 +253,10 @@ function ShiftPage({ user, isOpen, setIsOpen, onToast }) {
   </main>;
 }
 
-function TapPage({ onToast }) {
+function TapPage({ onToast }: { onToast: (message: string) => void }) {
   const [taps, setTaps] = useState([{ name: 'Vòi 1', keg: 'KEG-0008', beer: 'Bia hơi Hà Nội', sold: 46, capacity: 50 }, { name: 'Vòi 2', keg: 'KEG-0006', beer: 'Bia hơi Hải Phòng', sold: 27, capacity: 30 }, { name: 'Vòi 3', keg: 'Chưa gắn keg', beer: '—', sold: 0, capacity: 50 }]);
-  const [confirmTap, setConfirmTap] = useState(null);
-  const replaceTap = (index) => {
+  const [confirmTap, setConfirmTap] = useState<number | null>(null);
+  const replaceTap = (index: number) => {
     setTaps((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, keg: `KEG-00${11 + itemIndex}`, sold: 0 } : item));
     setConfirmTap(null);
     onToast('Đã cập nhật keg demo cho vòi.');
@@ -254,10 +287,10 @@ function ReportsPage() {
   </main>;
 }
 
-function Metric({ label, value, change }) {
+function Metric({ label, value, change }: { label: string; value: string; change?: string }) {
   return <article className="metric-card"><div className="metric-top">{label}</div><div className="metric-value">{value}</div><div className="metric-foot">{change || 'Dữ liệu minh họa'}</div></article>;
 }
 
-function DataTable({ columns, rows }) {
+function DataTable({ columns, rows }: { columns: string[]; rows: string[][] }) {
   return <section className="panel feature-panel"><header className="panel-header"><div><h2 className="panel-title">Chi tiết theo keg</h2><div className="panel-subtitle">Dữ liệu minh họa</div></div></header><div className="table-wrap"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index}>{row.map((value, cell) => <td key={cell}>{value}</td>)}</tr>)}</tbody></table></div></section>;
 }

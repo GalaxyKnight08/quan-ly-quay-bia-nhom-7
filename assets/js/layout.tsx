@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { authService } from '../../services/auth-service.js';
-import { roleLabel } from '../../utils/permissions.js';
-import { formatDate, initials } from '../../utils/helper.js';
+import { authService } from '../../services/auth-service.ts';
+import { roleLabel } from '../../utils/permissions.ts';
+import { formatDate, initials } from '../../utils/helper.ts';
+import type { User } from '../../utils/types.ts';
+import type { ReactNode, Dispatch, SetStateAction } from 'react';
 
-const links = [
+const links: { view: string; label: string; icon: string; group: string; managerOnly?: boolean }[] = [
   { view: 'tables', label: 'Sơ đồ bàn', icon: 'fa-table-cells-large', group: 'Quầy' },
   { view: 'shifts', label: 'Mở / đóng ca', icon: 'fa-clock', group: 'Quầy' },
   { view: 'taps', label: 'Vòi & keg', icon: 'fa-beer-mug-empty', group: 'Quầy' },
@@ -18,7 +20,16 @@ const links = [
   { view: 'happyHours', label: 'Giá giờ vàng', icon: 'fa-tags', managerOnly: true, group: 'Quản trị' }
 ];
 
-export function DashboardLayout({ user, occupiedCount, shiftOpen, activeView, onNavigate, children }) {
+interface DashboardLayoutProps {
+  user: User;
+  occupiedCount: number;
+  shiftOpen: boolean;
+  activeView: string;
+  onNavigate: (view: string) => void;
+  children: ReactNode;
+}
+
+export function DashboardLayout({ user, occupiedCount, shiftOpen, activeView, onNavigate, children }: DashboardLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const activeLink = links.find((link) => link.view === activeView);
   const activeLabel = activeLink?.label || 'Sơ đồ bàn';
@@ -28,12 +39,23 @@ export function DashboardLayout({ user, occupiedCount, shiftOpen, activeView, on
   };
 
   return <div className="app-shell">
-    <Sidebar user={user} occupiedCount={occupiedCount} shiftOpen={shiftOpen} onNavigate={onNavigate} onSignOut={signOut} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+    <Sidebar user={user} occupiedCount={occupiedCount} shiftOpen={shiftOpen} activeView={activeView} onNavigate={onNavigate} onSignOut={signOut} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
     <div className="main-column"><header className="topbar"><div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><button className="icon-button mobile-menu" type="button" aria-label="Mở menu" aria-expanded={mobileOpen} onClick={() => setMobileOpen((value) => !value)}><i className="icon fa-solid fa-bars" aria-hidden="true" /></button><div className="breadcrumb"><span>Quầy Bia</span><span>/</span><strong>{activeLabel}</strong></div></div><div className="topbar-actions"><span className="today-label">{formatDate()}</span><button className="icon-button" type="button" aria-label="Thông báo" title="Thông báo"><i className="icon fa-solid fa-bell" aria-hidden="true" /></button></div></header>{children}</div>
   </div>;
 }
 
-function Sidebar({ user, occupiedCount, shiftOpen, onNavigate, onSignOut, mobileOpen, setMobileOpen }) {
+interface SidebarProps {
+  user: User;
+  occupiedCount: number;
+  shiftOpen: boolean;
+  activeView: string;
+  onNavigate: (view: string) => void;
+  onSignOut: () => void;
+  mobileOpen: boolean;
+  setMobileOpen: Dispatch<SetStateAction<boolean>>;
+}
+
+function Sidebar({ user, occupiedCount, shiftOpen, activeView, onNavigate, onSignOut, mobileOpen, setMobileOpen }: SidebarProps) {
   return <aside className={`sidebar${mobileOpen ? ' is-open' : ''}`} aria-label="Điều hướng chính">
     <a className="brand-mark" href="./dashboard.html"><span className="brand-symbol"><i className="icon fa-solid fa-beer-mug-empty" aria-hidden="true" /></span><span>quầy bia<span style={{ color: 'var(--green)' }}>.</span></span></a>
     <div className="workspace-label">Không gian làm việc</div>

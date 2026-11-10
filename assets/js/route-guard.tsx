@@ -1,7 +1,12 @@
-import { useEffect } from 'react';
-import { authService } from '../../services/auth-service.js';
+import { useEffect, type ReactNode } from 'react';
+import { authService } from '../../services/auth-service.ts';
 
-export function RouteGuard({ children, guestOnly = false }) {
+interface RouteGuardProps {
+  children: ReactNode;
+  guestOnly?: boolean;
+}
+
+export function RouteGuard({ children, guestOnly = false }: RouteGuardProps) {
   const user = authService.currentUser();
   const shouldRedirect = guestOnly ? Boolean(user) : !user;
 

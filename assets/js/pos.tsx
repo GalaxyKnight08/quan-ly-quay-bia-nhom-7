@@ -1,13 +1,26 @@
-import { useEffect, useMemo, useState } from 'react';
-import { authService } from '../../services/auth-service.js';
-import { MENU, posService } from '../../services/pos-service.js';
-import { formatMoney, formatTime } from '../../utils/helper.js';
-import { DashboardLayout } from './layout.jsx';
-import { FRPage } from './fr-pages.jsx';
+import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import { authService } from '../../services/auth-service.ts';
+import { MENU, posService } from '../../services/pos-service.ts';
+import { formatMoney, formatTime } from '../../utils/helper.ts';
+import { DashboardLayout } from './layout.tsx';
+import { FRPage } from './fr-pages.tsx';
+import type { CompletedBill, DiningTable, MenuItem, OrderLine, PaymentDetails, User } from '../../utils/types.ts';
+import type { AdjustmentAction } from '../../utils/types.ts';
 
-const money = (value) => formatMoney(value);
+type DraftLine = MenuItem & { quantity: number };
+interface Adjustment {
+  roundId: string;
+  lineId: string;
+  action: AdjustmentAction;
+  quantity: number;
+  discountAmount: number;
+  reason: string;
+  note: string;
+}
 
-function elapsedTime(openedAt) {
+const money = (value: number) => formatMoney(value);
+
+function elapsedTime(openedAt: string | null) {
   if (!openedAt) return '';
   const minutes = Math.max(0, Math.floor((Date.now() - new Date(openedAt).getTime()) / 60000));
   return `${Math.floor(minutes / 60)}g ${minutes % 60}p`;
@@ -17,13 +30,13 @@ export function DashboardPage() {
   const user = authService.currentUser();
   const [data, setData] = useState(() => posService.getData());
   const [areaId, setAreaId] = useState('inside');
-  const [activeView, setActiveView] = useState(['manager', 'owner'].includes(user.role) ? 'reports' : 'tables');
-  const [selectedTableId, setSelectedTableId] = useState(null);
-  const [paymentTableId, setPaymentTableId] = useState(null);
-  const [openTableId, setOpenTableId] = useState(null);
+  const [activeView, setActiveView] = useState(['manager', 'owner'].includes(user?.role ?? '') ? 'reports' : 'tables');
+  const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
+  const [paymentTableId, setPaymentTableId] = useState<number | null>(null);
+  const [openTableId, setOpenTableId] = useState<number | null>(null);
   const [shiftOpen, setShiftOpen] = useState(false);
   const [toast, setToast] = useState('');
-  const [receipt, setReceipt] = useState(null);
+  const [receipt, setReceipt] = useState<CompletedBill | null>(null);
   const selectedTable = data.tables.find((table) => table.id === selectedTableId);
   const paymentTable = data.tables.find((table) => table.id === paymentTableId);
 
@@ -46,42 +59,46 @@ export function DashboardPage() {
   const tables = useMemo(() => data.tables.filter((table) => table.areaId === areaId), [areaId, data.tables]);
   const occupiedCount = data.tables.filter((table) => table.status !== 'empty').length;
   const provisionalTotal = data.tables.filter((table) => table.status === 'provisional').reduce((sum, table) => sum + table.total, 0);
-  const updateData = (nextData) => {
+  const updateData = (nextData: ReturnType<typeof posService.getData>) => {
     setData(nextData);
     setOpenTableId(null);
     setToast('');
   };
-  const handleTableClick = (table) => {
+  const handleTableClick = (table: DiningTable) => {
     if (table.status === 'empty') setOpenTableId(table.id);
     else setSelectedTableId(table.id);
   };
-  const handleOpenTable = (guestCount) => {
+  const handleOpenTable = (guestCount: number | null) => {
     try {
+      if (openTableId === null) return;
       updateData(posService.openTable(openTableId, guestCount));
       setOpenTableId(null);
       setSelectedTableId(openTableId);
     } catch (error) {
-      setToast(error.message);
+      setToast(error instanceof Error ? error.message : 'Không thể mở bàn.');
     }
   };
-  const handleAddRound = (lines) => {
+  const handleAddRound = (lines: DraftLine[]) => {
     try {
+      if (selectedTableId === null || !user) return;
       updateData(posService.addRound(selectedTableId, lines, user.name));
     } catch (error) {
-      setToast(error.message);
+      setToast(error instanceof Error ? error.message : 'Không thể gửi lượt gọi.');
     }
   };
   const handleProvisional = () => {
     try {
+      if (selectedTableId === null) return;
       updateData(posService.markProvisional(selectedTableId));
       setSelectedTableId(null);
       setToast('Đã ghi nhận in tạm tính.');
     } catch (error) {
-      setToast(error.message);
+      setToast(error instanceof Error ? error.message : 'Không thể in tạm tính.');
     }
   };
-  const handlePayment = (payment) => {
+  const handlePayment = (payment: PaymentDetails) => {
     try {
+      if (paymentTableId === null) return;
       const nextData = posService.closeTable(paymentTableId, payment);
       setData(nextData);
       setOpenTableId(null);
@@ -91,26 +108,30 @@ export function DashboardPage() {
       setReceipt(nextData.completedBills[0]);
       setToast('Đã hoàn tất thanh toán. Bàn đã trở về trạng thái trống.');
     } catch (error) {
-      setToast(error.message);
+      setToast(error instanceof Error ? error.message : 'Không thể hoàn tất thanh toán.');
     }
   };
-  const handleMoveMerge = (targetId, merge) => {
+  const handleMoveMerge = (targetId: number, merge: boolean) => {
     try {
+      if (selectedTableId === null) return;
       updateData(posService.moveTable(selectedTableId, targetId, merge));
       setSelectedTableId(null);
       setToast(merge ? 'Đã gộp phiên bàn.' : 'Đã chuyển bàn.');
     } catch (error) {
-      setToast(error.message);
+      setToast(error instanceof Error ? error.message : 'Không thể chuyển hoặc gộp bàn.');
     }
   };
-  const handleAdjustment = ({ roundId, lineId, action, quantity, discountAmount }) => {
+  const handleAdjustment = ({ roundId, lineId, action, quantity, discountAmount, reason, note }: Adjustment) => {
     try {
-      updateData(posService.adjustOrderLine(selectedTableId, roundId, lineId, action, quantity, discountAmount));
+      if (selectedTableId === null) return;
+      updateData(posService.adjustOrderLine(selectedTableId, roundId, lineId, action, quantity, discountAmount, reason, note));
       setToast(action === 'void' ? 'Đã ghi nhận hủy món demo.' : 'Đã ghi nhận giảm giá demo.');
     } catch (error) {
-      setToast(error.message);
+      setToast(error instanceof Error ? error.message : 'Không thể điều chỉnh món.');
     }
   };
+
+  if (!user) return null;
 
   return <>
     <DashboardLayout
@@ -155,7 +176,7 @@ export function DashboardPage() {
   </>;
 }
 
-function OpenTableDialog({ tableId, onCancel, onConfirm }) {
+function OpenTableDialog({ tableId, onCancel, onConfirm }: { tableId: number; onCancel: () => void; onConfirm: (guestCount: number | null) => void }) {
   const [guestCount, setGuestCount] = useState('');
   return <Modal title={`Mở bàn ${tableId}`} onClose={onCancel}>
     <form onSubmit={(event) => { event.preventDefault(); onConfirm(guestCount ? Number(guestCount) : null); }}>
@@ -165,18 +186,31 @@ function OpenTableDialog({ tableId, onCancel, onConfirm }) {
   </Modal>;
 }
 
-function TableSessionDialog({ table, tables, user, onClose, onAddRound, onProvisional, onPayment, onMoveMerge, onAdjustment }) {
+interface TableSessionDialogProps {
+  table: DiningTable;
+  tables: DiningTable[];
+  user: User;
+  onClose: () => void;
+  onAddRound: (lines: DraftLine[]) => void;
+  onProvisional: () => void;
+  onPayment: () => void;
+  onMoveMerge: (targetId: number, merge: boolean) => void;
+  onAdjustment: (adjustment: Adjustment) => void;
+}
+
+function TableSessionDialog({ table, tables, user, onClose, onAddRound, onProvisional, onPayment, onMoveMerge, onAdjustment }: TableSessionDialogProps) {
   const [category, setCategory] = useState('Tất cả');
   const [search, setSearch] = useState('');
-  const [draft, setDraft] = useState([]);
+  const [draft, setDraft] = useState<DraftLine[]>([]);
   const [sessionAction, setSessionAction] = useState('');
   const categories = ['Tất cả', ...new Set(MENU.map((item) => item.category))];
   const searchTerm = search.trim().toLocaleLowerCase('vi');
   const filteredMenu = MENU.filter((item) => (category === 'Tất cả' || item.category === category)
     && `${item.name} ${item.shortcut}`.toLocaleLowerCase('vi').includes(searchTerm));
-  const changeQuantity = (itemId, delta) => setDraft((lines) => {
+  const changeQuantity = (itemId: string, delta: number) => setDraft((lines) => {
     const existing = lines.find((line) => line.id === itemId);
-    if (!existing && delta > 0) return [...lines, { ...MENU.find((item) => item.id === itemId), quantity: 1 }];
+    const menuItem = MENU.find((item) => item.id === itemId);
+    if (!existing && delta > 0 && menuItem) return [...lines, { ...menuItem, quantity: 1 }];
     return lines.map((line) => line.id === itemId ? { ...line, quantity: line.quantity + delta } : line).filter((line) => line.quantity > 0);
   });
   const sentLines = table.rounds.flatMap((round) => round.lines);
@@ -205,7 +239,7 @@ function TableSessionDialog({ table, tables, user, onClose, onAddRound, onProvis
   </Modal>;
 }
 
-function TransferDialog({ table, tables, onClose, onSubmit }) {
+function TransferDialog({ table, tables, onClose, onSubmit }: { table: DiningTable; tables: DiningTable[]; onClose: () => void; onSubmit: (targetId: number, merge: boolean) => void }) {
   const [mode, setMode] = useState('move');
   const [targetId, setTargetId] = useState('');
   const candidates = tables.filter((item) => item.id !== table.id && (mode === 'move' ? item.status === 'empty' : item.status !== 'empty'));
@@ -219,9 +253,9 @@ function TransferDialog({ table, tables, onClose, onSubmit }) {
   </Modal>;
 }
 
-function AdjustmentDialog({ table, user, onClose, onSubmit }) {
+function AdjustmentDialog({ table, user, onClose, onSubmit }: { table: DiningTable; user: User; onClose: () => void; onSubmit: (adjustment: Adjustment) => void }) {
   const [selected, setSelected] = useState('');
-  const [action, setAction] = useState('void');
+  const [action, setAction] = useState<AdjustmentAction>('void');
   const [quantity, setQuantity] = useState('1');
   const [reason, setReason] = useState('Khách đổi ý');
   const [note, setNote] = useState('');
@@ -233,7 +267,7 @@ function AdjustmentDialog({ table, user, onClose, onSubmit }) {
   return <Modal title="Hủy / giảm món đã gửi" onClose={onClose}>
     <div className="modal-body feature-form">
       <label className="modal-field"><span>Món đã gửi</span><select value={selected} onChange={(event) => setSelected(event.target.value)}><option value="">Chọn món</option>{lines.map((line) => <option key={`${line.roundId}:${line.id}`} value={`${line.roundId}:${line.id}`}>{line.name} · còn {line.quantity}</option>)}</select></label>
-      <label className="modal-field"><span>Thao tác</span><select value={action} onChange={(event) => setAction(event.target.value)}><option value="void">Hủy món</option><option value="discount">Giảm giá</option></select></label>
+      <label className="modal-field"><span>Thao tác</span><select value={action} onChange={(event) => setAction(event.target.value as AdjustmentAction)}><option value="void">Hủy món</option><option value="discount">Giảm giá</option></select></label>
       <label className="modal-field"><span>{action === 'void' ? 'Số lượng hủy' : 'Số lượng món áp dụng'}</span><input type="number" min="1" max={selectedLine?.quantity || 1} value={quantity} onChange={(event) => setQuantity(event.target.value)} /></label>
       {action === 'discount' && <label className="modal-field"><span>Số tiền giảm (₫)</span><input type="number" min="1" value={discount} onChange={(event) => setDiscount(event.target.value)} /></label>}
       <label className="modal-field"><span>Lý do bắt buộc</span><select value={reason} onChange={(event) => setReason(event.target.value)}>{['Khách đổi ý', 'Bếp hết món', 'Nhập nhầm', 'Món lỗi', 'Khác'].map((item) => <option key={item}>{item}</option>)}</select></label>
@@ -253,7 +287,14 @@ function AdjustmentDialog({ table, user, onClose, onSubmit }) {
   </Modal>;
 }
 
-function PaymentDialog({ table, user, onClose, onConfirm }) {
+interface PaymentDialogProps {
+  table: DiningTable;
+  user: User;
+  onClose: () => void;
+  onConfirm: (payment: PaymentDetails) => void;
+}
+
+function PaymentDialog({ table, user, onClose, onConfirm }: PaymentDialogProps) {
   const [method, setMethod] = useState('cash');
   const [received, setReceived] = useState('');
   const [transferAmount, setTransferAmount] = useState('');
@@ -290,7 +331,7 @@ function PaymentDialog({ table, user, onClose, onConfirm }) {
     </div>
     <footer className="modal-footer"><button className="button-secondary" type="button" onClick={onClose}>Quay lại</button><button className="button-primary" type="button" disabled={!canComplete} onClick={() => {
       const cashPaid = Math.max(0, payable - transferValue);
-      const payments = [];
+      const payments: PaymentDetails['payments'] = [];
       if (cashPaid) payments.push({ method: 'CASH', amount: cashPaid });
       if (transferValue) payments.push({ method: 'TRANSFER', amount: transferValue });
       onConfirm({ subtotal, discount: discountValue, total: payable, change, payments });
@@ -298,7 +339,7 @@ function PaymentDialog({ table, user, onClose, onConfirm }) {
   </Modal>;
 }
 
-function ReceiptDialog({ receipt, onClose }) {
+function ReceiptDialog({ receipt, onClose }: { receipt: CompletedBill; onClose: () => void }) {
   return <Modal title="Hóa đơn thanh toán" onClose={onClose}>
     <div className="modal-body receipt-body">
       <div className="receipt-head"><strong>{receipt.billNo}</strong><span>Bàn {receipt.tableId} · {formatTime(receipt.paidAt)}</span></div>
@@ -313,11 +354,11 @@ function ReceiptDialog({ receipt, onClose }) {
   </Modal>;
 }
 
-function Modal({ title, onClose, children, wide = false }) {
+function Modal({ title, onClose, children, wide = false }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
   useEffect(() => {
-    const closeOnEscape = (event) => { if (event.key === 'Escape') onClose(); };
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [onClose]);
-  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className={`modal${wide ? ' modal-wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby="modal-title"><header className="modal-header"><h2 id="modal-title">{title}</h2><button className="modal-close" type="button" aria-label="Đóng" onClick={onClose}><i className="icon fa-solid fa-xmark" aria-hidden="true" /></button></header>{children}</section></div>;
+  return <div className="modal-backdrop" onMouseDown={(event: ReactMouseEvent<HTMLDivElement>) => { if (event.target === event.currentTarget) onClose(); }}><section className={`modal${wide ? ' modal-wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby="modal-title"><header className="modal-header"><h2 id="modal-title">{title}</h2><button className="modal-close" type="button" aria-label="Đóng" onClick={onClose}><i className="icon fa-solid fa-xmark" aria-hidden="true" /></button></header>{children}</section></div>;
 }

@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
-import { authService } from '../../services/auth-service.js';
-import { validateLogin } from '../../utils/validator.js';
+import { useRef, useState, type FormEvent, type ChangeEvent } from 'react';
+import { authService } from '../../services/auth-service.ts';
+import { validateLogin } from '../../utils/validator.ts';
 
 export function AuthPage() {
   const [email, setEmail] = useState('');
@@ -9,17 +9,17 @@ export function AuthPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const emailInput = useRef(null);
-  const passwordInput = useRef(null);
+  const emailInput = useRef<HTMLInputElement>(null);
+  const passwordInput = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
     const normalizedEmail = email.trim();
     const normalizedPassword = password.trim();
     const errors = validateLogin({ email: normalizedEmail, password: normalizedPassword });
     if (Object.keys(errors).length) {
-      setError(errors.email || errors.password);
+      setError(errors.email ?? errors.password ?? 'Thông tin đăng nhập không hợp lệ.');
       (errors.email ? emailInput : passwordInput).current?.focus();
       return;
     }
@@ -30,7 +30,7 @@ export function AuthPage() {
       setSuccess(`Xin chào ${user.name}`);
       window.setTimeout(() => window.location.assign('./dashboard.html'), 1200);
     } catch (loginError) {
-      setError(loginError.message);
+      setError(loginError instanceof Error ? loginError.message : 'Đăng nhập không thành công.');
     } finally {
       setIsSubmitting(false);
     }
@@ -45,8 +45,8 @@ export function AuthPage() {
     <section className="login-panel" aria-labelledby="login-title">
       <div className="login-form-wrap"><span className="eyebrow">Chào mừng trở lại</span><h2 id="login-title">Đăng nhập</h2><p className="login-intro">Sử dụng tài khoản được cấp để tiếp tục.</p>
         <form onSubmit={handleSubmit} noValidate>
-          <div className="field"><label htmlFor="email">Email</label><input ref={emailInput} id="email" name="email" type="email" inputMode="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" placeholder="ten@quaybia.vn" required /></div>
-          <div className="field"><label htmlFor="password">Mật khẩu</label><div className="password-wrap"><input ref={passwordInput} id="password" name="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" placeholder="Nhập mật khẩu" required /><button className="password-toggle" type="button" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowPassword((value) => !value)}><i className="icon fa-solid fa-eye" aria-hidden="true" /></button></div></div>
+          <div className="field"><label htmlFor="email">Email</label><input ref={emailInput} id="email" name="email" type="email" inputMode="email" value={email} onChange={(event: ChangeEvent<HTMLInputElement>) => setEmail(event.target.value)} autoComplete="username" placeholder="ten@quaybia.vn" required /></div>
+          <div className="field"><label htmlFor="password">Mật khẩu</label><div className="password-wrap"><input ref={passwordInput} id="password" name="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(event: ChangeEvent<HTMLInputElement>) => setPassword(event.target.value)} autoComplete="current-password" placeholder="Nhập mật khẩu" required /><button className="password-toggle" type="button" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowPassword((value) => !value)}><i className="icon fa-solid fa-eye" aria-hidden="true" /></button></div></div>
           <p className="form-error" role="alert" aria-live="polite">{error}</p>
           {success && <p className="form-success" role="status">{success}</p>}
           <button className="submit-button" type="submit" disabled={isSubmitting || Boolean(success)}>{isSubmitting ? <><i className="fa-solid fa-spinner fa-spin" aria-hidden="true" />Đang đăng nhập...</> : success ? 'Đăng nhập thành công' : <>Vào hệ thống <i className="icon fa-solid fa-arrow-right" aria-hidden="true" /></>}</button>

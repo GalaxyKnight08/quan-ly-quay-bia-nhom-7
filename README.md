@@ -2,7 +2,7 @@
 
 ## Chạy ứng dụng
 
-Yêu cầu Node.js 18 trở lên.
+Yêu cầu Node.js 18 trở lên. Giao diện được viết bằng React 19 và TypeScript.
 
 ```sh
 npm install
@@ -10,6 +10,8 @@ npm run dev
 ```
 
 Mở URL Vite hiển thị trong terminal. Trang đăng nhập nằm ở `/`, dashboard ở `/dashboard.html`.
+
+Chạy `npm run typecheck` để kiểm tra kiểu. `npm run build` tự chạy type-check trước khi build production.
 
 Tài khoản demo:
 

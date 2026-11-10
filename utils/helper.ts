@@ -1,10 +1,10 @@
-import { APP_CONFIG } from './config.js';
+import { APP_CONFIG } from './config.ts';
 
-export const formatMoney = (value) => new Intl.NumberFormat(APP_CONFIG.locale, {
+export const formatMoney = (value: number) => new Intl.NumberFormat(APP_CONFIG.locale, {
   style: 'currency', currency: APP_CONFIG.currency, maximumFractionDigits: 0
 }).format(value);
 
-export const formatTime = (value) => new Intl.DateTimeFormat(APP_CONFIG.locale, {
+export const formatTime = (value: string | Date) => new Intl.DateTimeFormat(APP_CONFIG.locale, {
   hour: '2-digit', minute: '2-digit'
 }).format(new Date(value));
 
@@ -16,4 +16,4 @@ export const initials = (name = '') => name.trim().split(/\s+/).slice(-2).map((p
 
 export const escapeHtml = (value = '') => String(value).replace(/[&<>"']/g, (character) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-}[character]));
+}[character] ?? character));
