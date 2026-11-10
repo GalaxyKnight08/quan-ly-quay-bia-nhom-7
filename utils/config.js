@@ -6,6 +6,7 @@ export const APP_CONFIG = Object.freeze({
   storagePrefix: 'quanlyquaybia',
   demoAccounts: [
     { email: 'nhanvien@quaybia.vn', password: '123456', role: 'staff', name: 'Nguyễn Minh Anh' },
-    { email: 'quanly@quaybia.vn', password: '123456', role: 'manager', name: 'Trần Hoàng Nam' }
+    { email: 'quanly@quaybia.vn', password: '123456', role: 'manager', name: 'Trần Hoàng Nam' },
+    { email: 'hoa@biahoi.vn', password: '123456', role: 'owner', name: 'Nguyễn Thu Hoa' }
   ]
 });

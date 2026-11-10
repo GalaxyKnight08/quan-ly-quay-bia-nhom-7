@@ -3,7 +3,9 @@
 .sidebar .brand-mark { padding: 0 9px; }
 .sidebar .brand-symbol { width: 34px; height: 34px; border-radius: 9px; }
 .workspace-label { margin: 34px 11px 11px; color: #9aa39c; font-size: 10px; font-weight: 700; text-transform: uppercase; }
-.nav-list { display: grid; gap: 4px; }
+.nav-list { display: grid; max-height: calc(100vh - 220px); gap: 12px; overflow-y: auto; }
+.nav-group { display: grid; gap: 3px; }
+.nav-group-title { padding: 5px 12px 2px; color: #9aa39c; font-size: 9px; font-weight: 700; text-transform: uppercase; }
 .nav-link { display: flex; min-height: 43px; align-items: center; gap: 12px; padding: 0 12px; border-radius: 5px; color: #65716a; font-size: 13px; font-weight: 600; transition: background .15s, color .15s; }
 .nav-link:hover { background: #f4f7f3; color: var(--ink); }
 .nav-link[aria-current='page'] { background: var(--green-soft); color: var(--green-dark); }
@@ -14,6 +16,7 @@
 .shift-label { display: flex; align-items: center; justify-content: space-between; color: #77827a; font-size: 11px; }
 .shift-status { display: inline-flex; align-items: center; gap: 6px; color: var(--green); font-size: 10px; font-weight: 700; }
 .shift-status::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ''; }
+.shift-status.is-closed { color: #909a93; }
 .shift-value { margin-top: 9px; font: 700 18px 'Manrope', sans-serif; }
 .profile { display: flex; align-items: center; gap: 10px; padding: 17px 5px 0; }
 .avatar { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: #e5eee7; color: #38664c; font-size: 12px; font-weight: 700; }

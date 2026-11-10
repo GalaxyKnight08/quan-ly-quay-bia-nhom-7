@@ -51,7 +51,7 @@ export function AuthPage() {
           {success && <p className="form-success" role="status">{success}</p>}
           <button className="submit-button" type="submit" disabled={isSubmitting || Boolean(success)}>{isSubmitting ? <><i className="fa-solid fa-spinner fa-spin" aria-hidden="true" />Đang đăng nhập...</> : success ? 'Đăng nhập thành công' : <>Vào hệ thống <i className="icon fa-solid fa-arrow-right" aria-hidden="true" /></>}</button>
         </form>
-        <p className="demo-note"><strong>Tài khoản dùng thử</strong><br />Nhân viên: nhanvien@quaybia.vn<br />Quản lý: quanly@quaybia.vn<br />Mật khẩu: 123456</p>
+        <p className="demo-note"><strong>Tài khoản dùng thử</strong><br />Nhân viên: nhanvien@quaybia.vn<br />Quản lý ca: quanly@quaybia.vn<br />Chủ quán: hoa@biahoi.vn<br />Mật khẩu: 123456</p>
       </div>
     </section>
   </>;
