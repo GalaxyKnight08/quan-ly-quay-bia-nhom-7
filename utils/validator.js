@@ -1,6 +1,6 @@
-export const validateLogin = ({ phone, password }) => {
+export const validateLogin = ({ email, password }) => {
   const errors = {};
-  if (!/^[0-9+()\-\s]{8,20}$/.test(phone || '')) errors.phone = 'Vui lòng nhập số điện thoại hợp lệ.';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || '')) errors.email = 'Vui lòng nhập email hợp lệ.';
   if (!password || password.length < 6) errors.password = 'Mật khẩu cần có ít nhất 6 ký tự.';
   return errors;
 };
