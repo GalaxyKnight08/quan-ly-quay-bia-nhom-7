@@ -2,6 +2,8 @@ export type UserRole = 'staff' | 'manager' | 'owner';
 export type TableStatus = 'empty' | 'occupied' | 'provisional';
 export type AdjustmentAction = 'void' | 'discount';
 export type PaymentMethod = 'CASH' | 'TRANSFER';
+export const ADJUSTMENT_REASONS = ['Khách đổi ý', 'Bếp hết món', 'Nhập nhầm', 'Món lỗi', 'Khác'] as const;
+export type AdjustmentReason = typeof ADJUSTMENT_REASONS[number];
 
 export interface OrderAdjustment {
   roundId: string;
@@ -9,7 +11,7 @@ export interface OrderAdjustment {
   action: AdjustmentAction;
   quantity: number;
   discountAmount: number;
-  reason: string;
+  reason: AdjustmentReason;
   note: string;
   approverPin?: string;
 }
@@ -89,6 +91,7 @@ export interface OrderRound {
 
 export interface DiningTable {
   id: number;
+  billNo?: string;
   areaId: string;
   status: TableStatus;
   guestCount: number | null;

@@ -26,7 +26,7 @@ export function PaymentDialog({ table, user, onClose, onConfirm }: PaymentDialog
   const transferValue = method === 'cash' ? 0 : method === 'transfer' ? payable : Number(transferAmount);
   const cashValue = method === 'transfer' ? 0 : Number(received);
   const discountApproved = discountValue === 0 || user.role !== 'staff' || approverPin === '1234';
-  const canComplete = payable > 0 && transferValue <= payable && cashValue + transferValue >= payable && (transferValue === 0 || transferConfirmed) && discountApproved;
+  const canComplete = payable > 0 && transferValue <= payable && cashValue + transferValue >= payable && (transferValue === 0 || (transferConfirmed && Boolean(table.billNo))) && discountApproved;
   const change = Math.max(0, cashValue + transferValue - payable);
 
   return <Modal title={`Thanh toán bàn ${table.id}`} onClose={onClose}>
@@ -43,7 +43,7 @@ export function PaymentDialog({ table, user, onClose, onConfirm }: PaymentDialog
       </div>
       {method !== 'transfer' && <><label className="modal-field"><span>{method === 'split' ? 'Tiền mặt khách đưa (₫)' : 'Tiền khách đưa (₫)'}</span><input type="number" min="0" step="1000" value={received} onChange={(event) => setReceived(event.target.value)} placeholder="Nhập số tiền" /></label><div className="quick-cash">{[100000, 200000, 500000].map((amount) => <button key={amount} type="button" onClick={() => setReceived(String(amount))}>{money(amount)}</button>)}</div></>}
       {method === 'split' && <label className="modal-field"><span>Chuyển khoản (₫)</span><input type="number" min="0" max={payable} value={transferAmount} onChange={(event) => setTransferAmount(event.target.value)} placeholder="Nhập số tiền chuyển khoản" /></label>}
-      {method !== 'cash' && <><div className="qr-placeholder"><i className="icon fa-solid fa-qrcode" aria-hidden="true" /><strong>Mã VietQR · {money(transferValue)}</strong><span>QR thật cần cấu hình tài khoản ngân hàng của quán.</span><code>BH{table.id}</code></div><label className="payment-confirm"><input type="checkbox" checked={transferConfirmed} onChange={(event) => setTransferConfirmed(event.target.checked)} /><span>Đã kiểm tra và xác nhận nhận đủ tiền chuyển khoản</span></label></>}
+      {method !== 'cash' && <><div className="qr-placeholder"><i className="icon fa-solid fa-qrcode" aria-hidden="true" /><strong>Mã VietQR · {money(transferValue)}</strong><span>QR thật cần cấu hình tài khoản ngân hàng của quán.</span>{table.billNo && <code>BH{table.billNo}</code>}</div>{!table.billNo && <p className="form-error" role="alert">Phiên bàn chưa có số hóa đơn để tạo nội dung chuyển khoản.</p>}<label className="payment-confirm"><input type="checkbox" checked={transferConfirmed} onChange={(event) => setTransferConfirmed(event.target.checked)} /><span>Đã kiểm tra và xác nhận nhận đủ tiền chuyển khoản</span></label></>}
       <div className="payment-change"><span>Tiền thừa</span><strong>{money(change)}</strong></div>
       {transferValue > payable && <p className="form-error" role="alert">Số tiền chuyển khoản không được vượt quá tổng cần thanh toán.</p>}
       {!discountApproved && <p className="form-error" role="alert">PIN không đúng.</p>}

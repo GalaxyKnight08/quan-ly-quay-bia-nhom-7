@@ -107,6 +107,7 @@ export async function mockApiRequest<T>(path: string, options: RequestInit = {})
         code: String(table.id),
         status: table.status === 'empty' ? 'EMPTY' : table.status === 'provisional' ? 'PROVISIONAL_PRINTED' : 'OCCUPIED',
         tabId: table.status === 'empty' ? undefined : 300 + table.id,
+        billNo: table.billNo,
         total: table.total,
         openedAt: table.openedAt,
         guestCount: table.guestCount,

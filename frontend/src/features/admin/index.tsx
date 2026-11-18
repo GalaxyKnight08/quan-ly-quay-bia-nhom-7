@@ -1,5 +1,6 @@
 import { useMemo, useState, type ChangeEvent, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from 'react';
 import { formatMoney } from '../../lib/format.ts';
+import { ADJUSTMENT_REASONS } from '../../types/index.ts';
 
 const money = formatMoney;
 
@@ -85,7 +86,7 @@ const datasets: Record<string, DatasetConfig> = {
     tabs: [{ id: 'voids', label: 'Nhật ký', columns: ['Thời gian', 'Bàn', 'Món', 'Số lượng', 'Số tiền', 'Loại', 'Lý do', 'Người yêu cầu / duyệt'], fields: [], rows: [
       { name: '10/11/2026 16:42', table: 'Bàn 12', item: 'Khoai tây chiên', quantity: '−1', amount: 45000, type: 'Hủy', reason: 'Khách đổi ý', staff: 'Minh Anh / Hoàng Nam' },
       { name: '10/11/2026 15:18', table: 'Bàn 08', item: 'Mực nướng', quantity: '−10%', amount: 13500, type: 'Giảm giá', reason: 'Món lỗi', staff: 'Minh Anh / Hoàng Nam' },
-      { name: '10/11/2026 14:06', table: 'Bàn 23', item: 'Hóa đơn', quantity: '−5%', amount: 32000, type: 'Giảm hóa đơn', reason: 'Chăm sóc khách', staff: 'Hoàng Nam / —' }
+      { name: '10/11/2026 14:06', table: 'Bàn 23', item: 'Hóa đơn', quantity: '−5%', amount: 32000, type: 'Giảm hóa đơn', reason: 'Khác', note: 'Ưu đãi chăm sóc khách hàng', staff: 'Hoàng Nam / —' }
     ] }]
   },
   topItems: {
@@ -177,7 +178,7 @@ function RecordsPage({ config, onToast, filters = false }: { config: DatasetConf
     {filters && <div className="feature-filters panel">{config.title.includes('Món bán') ? <>
       <label>Từ ngày<input id="report-from" type="date" defaultValue="2026-11-01" onChange={() => validateReportPeriod(setDateError)} /></label><label>Đến ngày<input id="report-to" type="date" defaultValue="2026-11-10" onChange={() => validateReportPeriod(setDateError)} /></label><label>Xếp theo<select value={sortBy} onChange={(event) => setSortBy(event.target.value)}><option value="quantity">Số lượng</option><option value="amount">Doanh thu</option></select></label><p className="form-error" role="alert">{dateError}</p>
     </> : <>
-      <label>Từ ngày<input type="date" defaultValue="2026-11-01" /></label><label>Đến ngày<input type="date" defaultValue="2026-11-10" /></label><label>Nhân viên<input type="search" placeholder="Tất cả" /></label><label>Người duyệt<input type="search" placeholder="Tất cả" /></label><label>Lý do<select defaultValue=""><option value="">Tất cả lý do</option>{['Khách đổi ý', 'Bếp hết món', 'Nhập nhầm', 'Món lỗi', 'Khác'].map((reason) => <option key={reason}>{reason}</option>)}</select></label>
+      <label>Từ ngày<input type="date" defaultValue="2026-11-01" /></label><label>Đến ngày<input type="date" defaultValue="2026-11-10" /></label><label>Nhân viên<input type="search" placeholder="Tất cả" /></label><label>Người duyệt<input type="search" placeholder="Tất cả" /></label><label>Lý do<select defaultValue=""><option value="">Tất cả lý do</option>{ADJUSTMENT_REASONS.map((reason) => <option key={reason}>{reason}</option>)}</select></label>
     </>}</div>}
     {config.title.includes('Nhật ký') && <section className="report-metrics"><Metric label="Số lần hủy / giảm" value="3" /><Metric label="Tổng tiền điều chỉnh" value={money(90500)} /><Metric label="Người yêu cầu" value="2 nhân viên" /><Metric label="Khoảng thời gian" value="01/11 – 10/11" /></section>}
     {config.title.includes('Món bán') && <TopItemsCharts />}

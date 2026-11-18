@@ -1,7 +1,14 @@
 import { cacheService } from '../lib/storage.ts';
-import type { AdjustmentAction, Area, CompletedBill, DiningTable, MenuItem, OrderLine, OrderRound, PaymentDetails, PosData, TableStatus } from '../types/index.ts';
+import type { AdjustmentAction, AdjustmentReason, Area, CompletedBill, DiningTable, MenuItem, OrderLine, OrderRound, PaymentDetails, PosData, TableStatus } from '../types/index.ts';
 
 const STORAGE_KEY = 'pos-demo-data';
+let billSequence = 0;
+
+function createBillNo() {
+  billSequence += 1;
+  return `HD-${Date.now()}-${billSequence}`;
+}
+
 const AREAS: Area[] = [
   { id: 'inside', name: 'Trong nhà', firstTable: 1, count: 30 },
   { id: 'yard', name: 'Sân vườn', firstTable: 31, count: 30 },
@@ -28,6 +35,7 @@ const createInitialData = (): PosData => {
     const rounds = openedAt ? createMockRounds(number, openedAt) : [];
     return {
       id: number,
+      billNo: isOccupied ? createBillNo() : undefined,
       areaId: area.id,
       status,
       guestCount: isOccupied ? (number % 5) + 2 : 0,
@@ -79,6 +87,10 @@ export const posService = {
     if (!data) return save(createInitialData());
     let updated = false;
     data.tables.forEach((table) => {
+      if (table.status !== 'empty' && !table.billNo) {
+        table.billNo = createBillNo();
+        updated = true;
+      }
       if (table.status !== 'empty' && !table.rounds?.length && table.total > 0) {
         const openedAt = table.openedAt ?? new Date(Date.now() - 30 * 60000).toISOString();
         table.openedAt = openedAt;
@@ -99,6 +111,7 @@ export const posService = {
     if (!table) throw new Error('Không tìm thấy bàn.');
     if (table.status !== 'empty') throw new Error('Bàn đã được mở.');
     table.status = 'occupied';
+    table.billNo = createBillNo();
     table.guestCount = guestCount;
     table.openedAt = new Date().toISOString();
     table.total = 0;
@@ -148,10 +161,10 @@ export const posService = {
     } else {
       Object.assign(target, { ...source, id: target.id, areaId: target.areaId });
     }
-    Object.assign(source, { status: 'empty', guestCount: 0, openedAt: null, total: 0, rounds: [], provisionalCount: 0 });
+    Object.assign(source, { status: 'empty', billNo: undefined, guestCount: 0, openedAt: null, total: 0, rounds: [], provisionalCount: 0 });
     return save(data);
   },
-  adjustOrderLine(tableId: number, roundId: string, lineId: string, action: AdjustmentAction, quantity: number, discountAmount = 0, reason = '', note = '') {
+  adjustOrderLine(tableId: number, roundId: string, lineId: string, action: AdjustmentAction, quantity: number, discountAmount = 0, reason: AdjustmentReason = 'Khách đổi ý', note = '') {
     const data = this.getData();
     const table = data.tables.find((item) => item.id === tableId);
     const round = table?.rounds.find((item) => item.id === roundId);
@@ -176,7 +189,7 @@ export const posService = {
     if (!table || table.status === 'empty') throw new Error('Phiên bàn không còn mở.');
     const paidAt = new Date().toISOString();
     const bill: CompletedBill = {
-      billNo: `HD-${Date.now()}`,
+      billNo: table.billNo ?? createBillNo(),
       tableId,
       paidAt,
       subtotal: payment.subtotal ?? table.total,
@@ -187,7 +200,7 @@ export const posService = {
       lines: table.rounds.flatMap((round) => round.lines.map((line) => ({ ...line })))
     };
     data.completedBills.unshift(bill);
-    Object.assign(table, { status: 'empty', guestCount: 0, openedAt: null, total: 0, rounds: [], provisionalCount: 0 });
+    Object.assign(table, { status: 'empty', billNo: undefined, guestCount: 0, openedAt: null, total: 0, rounds: [], provisionalCount: 0 });
     return save(data);
   }
 };

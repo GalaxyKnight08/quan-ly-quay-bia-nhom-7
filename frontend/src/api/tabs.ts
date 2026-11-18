@@ -1,6 +1,6 @@
 import { apiRequest } from './client.ts';
 import { USE_MOCK } from '../lib/config.ts';
-import type { AdjustmentAction, CompletedBill, DiningTable, MenuItem, OrderLine, PaymentDetails, PosData } from '../types/index.ts';
+import type { AdjustmentAction, AdjustmentReason, CompletedBill, DiningTable, MenuItem, OrderLine, PaymentDetails, PosData } from '../types/index.ts';
 
 interface ApiArea {
   id: string | number;
@@ -18,6 +18,7 @@ interface TabSummary {
     code: string;
     status: 'EMPTY' | 'OCCUPIED' | 'PROVISIONAL_PRINTED';
     tabId?: number;
+    billNo?: string;
     total?: number;
     openedAt?: string;
     guestCount?: number | null;
@@ -45,7 +46,7 @@ interface ApiBill {
   }>;
 }
 
-const reasonCodes: Record<string, string> = {
+const reasonCodes: Record<AdjustmentReason, string> = {
   'Khách đổi ý': 'CUSTOMER_CHANGED_MIND',
   'Bếp hết món': 'OUT_OF_STOCK',
   'Nhập nhầm': 'WRONG_ENTRY',
@@ -73,6 +74,7 @@ export async function getPosData(): Promise<PosData> {
     })),
     tables: summary.tables.map((table) => ({
       id: table.tableId,
+      billNo: table.billNo,
       areaId: String(table.areaId),
       status: table.status === 'EMPTY' ? 'empty' : table.status === 'PROVISIONAL_PRINTED' ? 'provisional' : 'occupied',
       guestCount: table.guestCount ?? null,
@@ -127,7 +129,7 @@ export async function adjustOrderLine(
   action: AdjustmentAction,
   quantity: number,
   discountAmount = 0,
-  reason = '',
+  reason: AdjustmentReason = 'Khách đổi ý',
   note = '',
   approverPin?: string
 ): Promise<PosData> {
@@ -140,7 +142,7 @@ export async function adjustOrderLine(
     body: JSON.stringify({
       qty: quantity,
       discountAmount: action === 'discount' ? discountAmount : undefined,
-      reason: reasonCodes[reason] ?? reason,
+      reason: reasonCodes[reason],
       note: note || null,
       approverPin: approverPin || null
     })
