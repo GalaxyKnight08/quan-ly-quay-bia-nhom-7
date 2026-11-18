@@ -15,9 +15,10 @@ Chạy `npm run typecheck` để kiểm tra kiểu. `npm run build` tự chạy 
 
 Tài khoản demo:
 
-- Nhân viên: `nhanvien@quaybia.vn` / `123456`
-- Quản lý ca: `quanly@quaybia.vn` / `123456`
+- Nhân viên: `lan@biahoi.vn` hoặc `minh@biahoi.vn` / `123456`
+- Quản lý ca: `hung@biahoi.vn` / `123456`
 - Chủ quán: `hoa@biahoi.vn` / `123456`
+- Tài khoản đã khóa: `khoa@biahoi.vn`
 
 Ứng dụng hiện dùng `localStorage` cho phiên đăng nhập và dữ liệu giao diện demo; dữ liệu chưa đồng bộ giữa nhiều thiết bị và chưa kết nối API backend. Chạy `npm run build` để tạo bản production đa trang trong `dist/`.
 

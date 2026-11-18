@@ -55,9 +55,11 @@ const datasets: Record<string, DatasetConfig> = {
     title: 'Quản lý nhân viên',
     subtitle: 'FR-13 · Tài khoản, vai trò và trạng thái nhân viên',
     tabs: [{ id: 'staff', label: 'Nhân viên', columns: ['Họ tên', 'Email', 'Vai trò', 'Trạng thái'], fields: [['Họ tên', 'name'], ['Email', 'email'], ['Mật khẩu mới (nếu tạo/đặt lại)', 'password', 'password'], ['Vai trò', 'role', 'select', ['Nhân viên quầy', 'Quản lý ca', 'Chủ quán']], ['PIN duyệt (quản lý/chủ quán)', 'pin', 'password'], ['Trạng thái', 'status', 'select', ['Hoạt động', 'Đã khóa']]], rows: [
-      { name: 'Nguyễn Minh Anh', email: 'nhanvien@quaybia.vn', role: 'Nhân viên quầy', status: 'Hoạt động' },
-      { name: 'Trần Hoàng Nam', email: 'quanly@quaybia.vn', role: 'Quản lý ca', status: 'Hoạt động' },
-      { name: 'Nguyễn Thu Hoa', email: 'hoa@biahoi.vn', role: 'Chủ quán', status: 'Hoạt động' }
+      { name: 'Nguyễn Thị Lan', email: 'lan@biahoi.vn', role: 'Nhân viên quầy', status: 'Hoạt động' },
+      { name: 'Trần Văn Minh', email: 'minh@biahoi.vn', role: 'Nhân viên quầy', status: 'Hoạt động' },
+      { name: 'Lê Văn Hùng', email: 'hung@biahoi.vn', role: 'Quản lý ca', status: 'Hoạt động' },
+      { name: 'Phạm Thị Hoa', email: 'hoa@biahoi.vn', role: 'Chủ quán', status: 'Hoạt động' },
+      { name: 'Đỗ Minh Khoa', email: 'khoa@biahoi.vn', role: 'Nhân viên quầy', status: 'Đã khóa' }
     ] }]
   },
   kegs: {
@@ -247,7 +249,7 @@ function ShiftPage({ user, isOpen, setIsOpen, onToast }: { user: User; isOpen: b
   const expectedCash = 2500000 + 6820000;
   return <main className="page-content feature-content"><PageHeading title="Mở / đóng ca" subtitle="FR-09 · Theo dõi tiền đầu ca, doanh thu và chênh lệch" action={<span className={`status-pill${isOpen ? '' : ' pending'}`}>{isOpen ? 'Ca đang mở' : 'Chưa mở ca'}</span>} />
     <section className="report-metrics"><Metric label="Tiền đầu ca" value={money(isOpen ? 2500000 : 0)} /><Metric label="Tiền mặt thu trong ca" value={money(isOpen ? 6820000 : 0)} /><Metric label="Chuyển khoản" value={money(isOpen ? 4380000 : 0)} /><Metric label="Hóa đơn" value={isOpen ? '42' : '0'} /></section>
-    <section className="panel shift-page-card"><header className="panel-header"><div><h2 className="panel-title">Ca chiều · 14:00 – hiện tại</h2><div className="panel-subtitle">Nhân viên: Nguyễn Minh Anh · Quản lý: Trần Hoàng Nam</div></div>{!isOpen ? <button className="button-primary" type="button" onClick={() => { setIsOpen(true); onToast('Đã mở ca demo.'); }}>Mở ca</button> : ['manager', 'owner'].includes(user.role) && <button className="button-secondary" type="button" onClick={() => { setIsOpen(false); onToast('Đã đóng ca demo.'); }}>Đóng ca</button>}</header>
+    <section className="panel shift-page-card"><header className="panel-header"><div><h2 className="panel-title">Ca chiều · 14:00 – hiện tại</h2><div className="panel-subtitle">Nhân viên: Nguyễn Thị Lan · Quản lý: Lê Văn Hùng</div></div>{!isOpen ? <button className="button-primary" type="button" onClick={() => { setIsOpen(true); onToast('Đã mở ca demo.'); }}>Mở ca</button> : ['manager', 'owner'].includes(user.role) && <button className="button-secondary" type="button" onClick={() => { setIsOpen(false); onToast('Đã đóng ca demo.'); }}>Đóng ca</button>}</header>
       {isOpen && <div className="shift-close-form"><label className="modal-field"><span>Tiền mặt đếm được (₫)</span><input type="number" min="0" value={countedCash} onChange={(event) => setCountedCash(event.target.value)} placeholder="Nhập số tiền trong két" /></label><div className="shift-difference"><span>Dự kiến trong két: <strong>{money(expectedCash)}</strong></span><span>Chênh lệch: <strong>{money((Number(countedCash) || 0) - expectedCash)}</strong></span></div>{user.role === 'staff' && <p className="form-hint">Chỉ Quản lý ca hoặc Chủ quán mới có thể đóng ca.</p>}</div>}
     </section>
   </main>;

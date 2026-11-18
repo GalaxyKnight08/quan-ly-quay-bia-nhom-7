@@ -14,8 +14,9 @@ export const APP_CONFIG = Object.freeze({
   apiBaseUrl: '',
   storagePrefix: 'quanlyquaybia',
   demoAccounts: [
-    { email: 'nhanvien@quaybia.vn', password: '123456', role: 'staff', name: 'Nguyễn Minh Anh' },
-    { email: 'quanly@quaybia.vn', password: '123456', role: 'manager', name: 'Trần Hoàng Nam' },
-    { email: 'hoa@biahoi.vn', password: '123456', role: 'owner', name: 'Nguyễn Thu Hoa' }
+    { email: 'lan@biahoi.vn', password: '123456', role: 'staff', name: 'Nguyễn Thị Lan' },
+    { email: 'minh@biahoi.vn', password: '123456', role: 'staff', name: 'Trần Văn Minh' },
+    { email: 'hung@biahoi.vn', password: '123456', role: 'manager', name: 'Lê Văn Hùng' },
+    { email: 'hoa@biahoi.vn', password: '123456', role: 'owner', name: 'Phạm Thị Hoa' }
   ] satisfies DemoAccount[]
 });
