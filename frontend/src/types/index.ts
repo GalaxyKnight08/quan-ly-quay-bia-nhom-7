@@ -3,10 +3,52 @@ export type TableStatus = 'empty' | 'occupied' | 'provisional';
 export type AdjustmentAction = 'void' | 'discount';
 export type PaymentMethod = 'CASH' | 'TRANSFER';
 
+export interface OrderAdjustment {
+  roundId: string;
+  lineId: string;
+  action: AdjustmentAction;
+  quantity: number;
+  discountAmount: number;
+  reason: string;
+  note: string;
+  approverPin?: string;
+}
+
 export interface User {
   name: string;
   email: string;
   role: UserRole;
+}
+
+export interface AuthSession {
+  token: string;
+  user: User;
+}
+
+export interface ReportSummary {
+  revenue: number;
+  openAmount: number;
+  occupiedTables: number;
+  totalTables: number;
+  bills: number;
+}
+
+export interface ReportKegLoss {
+  totalLossLiters: number;
+  totalLossAmount: number;
+  kegs: Array<Record<string, string | number | boolean>>;
+}
+
+export interface ReportVoid {
+  id: number;
+  [key: string]: string | number;
+}
+
+export interface ReportTopItems {
+  id: number;
+  name: string;
+  quantity: number;
+  revenue: number;
 }
 
 export interface Area {
@@ -66,6 +108,9 @@ export interface PaymentDetails {
   total: number;
   change: number;
   payments: PaymentEntry[];
+  discountType?: 'AMOUNT' | 'PERCENT';
+  discountValue?: number;
+  approverPin?: string;
 }
 
 export interface CompletedBill extends PaymentDetails {

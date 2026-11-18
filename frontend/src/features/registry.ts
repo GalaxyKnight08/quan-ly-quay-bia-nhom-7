@@ -1,4 +1,4 @@
-import type { Permission } from '../../../utils/permissions.ts';
+import type { Permission } from '../lib/permissions.ts';
 
 export interface FeatureModule {
   view: string;
@@ -8,7 +8,7 @@ export interface FeatureModule {
   permission: Permission;
 }
 
-export const FEATURE_MODULES: FeatureModule[] = [
+export const FEATURE_MODULES: readonly FeatureModule[] = [
   { view: 'tables', label: 'Sơ đồ bàn', icon: 'fa-table-cells-large', group: 'Quầy', permission: 'tables:view' },
   { view: 'shifts', label: 'Mở / đóng ca', icon: 'fa-clock', group: 'Quầy', permission: 'shifts:view' },
   { view: 'taps', label: 'Vòi & keg', icon: 'fa-beer-mug-empty', group: 'Quầy', permission: 'taps:manage' },

@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { authService } from '../../services/auth-service.ts';
-import { can, roleLabel } from '../../utils/permissions.ts';
-import { formatDate, initials } from '../../utils/helper.ts';
-import type { User } from '../../utils/types.ts';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/use-auth.ts';
+import type { User } from '../../types/index.ts';
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
-import { FEATURE_MODULES } from './modules/registry.ts';
+import { Sidebar } from './Sidebar.tsx';
+import { Topbar } from './Topbar.tsx';
 
 interface DashboardLayoutProps {
   user: User;
@@ -17,39 +17,15 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ user, occupiedCount, shiftOpen, activeView, onNavigate, children }: DashboardLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const activeLink = FEATURE_MODULES.find((link) => link.view === activeView);
-  const activeLabel = activeLink?.label || 'Sơ đồ bàn';
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const signOut = () => {
-    authService.logout();
-    window.location.replace('./index.html');
+    logout();
+    navigate('/login', { replace: true });
   };
 
   return <div className="app-shell">
     <Sidebar user={user} occupiedCount={occupiedCount} shiftOpen={shiftOpen} activeView={activeView} onNavigate={onNavigate} onSignOut={signOut} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
-    <div className="main-column"><header className="topbar"><div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><button className="icon-button mobile-menu" type="button" aria-label="Mở menu" aria-expanded={mobileOpen} onClick={() => setMobileOpen((value) => !value)}><i className="icon fa-solid fa-bars" aria-hidden="true" /></button><div className="breadcrumb"><span>Quầy Bia</span><span>/</span><strong>{activeLabel}</strong></div></div><div className="topbar-actions"><span className="today-label">{formatDate()}</span><button className="icon-button" type="button" aria-label="Thông báo" title="Thông báo"><i className="icon fa-solid fa-bell" aria-hidden="true" /></button></div></header>{children}</div>
+    <div className="main-column"><Topbar activeView={activeView} mobileOpen={mobileOpen} onToggleMobile={() => setMobileOpen((value) => !value)} />{children}</div>
   </div>;
-}
-
-interface SidebarProps {
-  user: User;
-  occupiedCount: number;
-  shiftOpen: boolean;
-  activeView: string;
-  onNavigate: (view: string) => void;
-  onSignOut: () => void;
-  mobileOpen: boolean;
-  setMobileOpen: Dispatch<SetStateAction<boolean>>;
-}
-
-function Sidebar({ user, occupiedCount, shiftOpen, activeView, onNavigate, onSignOut, mobileOpen, setMobileOpen }: SidebarProps) {
-  return <aside className={`sidebar${mobileOpen ? ' is-open' : ''}`} aria-label="Điều hướng chính">
-    <a className="brand-mark" href="./dashboard.html"><span className="brand-symbol"><i className="icon fa-solid fa-beer-mug-empty" aria-hidden="true" /></span><span>quầy bia<span style={{ color: 'var(--green)' }}>.</span></span></a>
-    <div className="workspace-label">Không gian làm việc</div>
-    <nav className="nav-list">{(['Quầy', 'Báo cáo', 'Quản trị'] as const).map((group) => {
-      const visibleLinks = FEATURE_MODULES.filter((link) => link.group === group && can(user, link.permission));
-      if (!visibleLinks.length) return null;
-      return <div className="nav-group" key={group}><div className="nav-group-title">{group}</div>{visibleLinks.map((link) => <a className="nav-link" href={`#${link.view}`} key={link.view} aria-current={link.view === activeView ? 'page' : undefined} onClick={(event) => { event.preventDefault(); setMobileOpen(false); onNavigate(link.view); }}><i className={`icon fa-solid ${link.icon}`} aria-hidden="true" />{link.label}{link.view === 'tables' && <span className="nav-count">{occupiedCount}</span>}</a>)}</div>;
-    })}</nav>
-    <div className="sidebar-bottom"><div className="shift-card"><div className="shift-label">Ca hiện tại <span className={`shift-status${shiftOpen ? '' : ' is-closed'}`}>{shiftOpen ? 'Đang mở' : 'Chưa mở'}</span></div><div className="shift-value">{shiftOpen ? 'Ca chiều · 14:00' : 'Chưa mở ca'}</div></div><div className="profile"><span className="avatar">{initials(user.name)}</span><div className="profile-copy"><div className="profile-name">{user.name}</div><div className="profile-role">{roleLabel(user.role)}</div></div><button className="logout-button" type="button" onClick={onSignOut} aria-label="Đăng xuất" title="Đăng xuất"><i className="icon fa-solid fa-right-from-bracket" aria-hidden="true" /></button></div></div>
-  </aside>;
 }

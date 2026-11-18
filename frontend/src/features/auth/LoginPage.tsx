@@ -1,8 +1,11 @@
 import { useRef, useState, type FormEvent, type ChangeEvent } from 'react';
-import { authService } from '../../services/auth-service.ts';
-import { validateLogin } from '../../utils/validator.ts';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/use-auth.ts';
+import { validateLogin } from '../../lib/validation.ts';
 
-export function AuthPage() {
+export function LoginPage() {
+  const { login, error: sessionError } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -26,9 +29,9 @@ export function AuthPage() {
     setError('');
     setIsSubmitting(true);
     try {
-      const user = await authService.login(normalizedEmail, normalizedPassword);
+      const user = await login(normalizedEmail, normalizedPassword);
       setSuccess(`Xin chào ${user.name}`);
-      window.setTimeout(() => window.location.assign('./dashboard.html'), 1200);
+      window.setTimeout(() => navigate('/dashboard'), 1200);
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : 'Đăng nhập không thành công.');
     } finally {
@@ -47,7 +50,7 @@ export function AuthPage() {
         <form onSubmit={handleSubmit} noValidate>
           <div className="field"><label htmlFor="email">Email</label><input ref={emailInput} id="email" name="email" type="email" inputMode="email" value={email} onChange={(event: ChangeEvent<HTMLInputElement>) => setEmail(event.target.value)} autoComplete="username" placeholder="ten@quaybia.vn" required /></div>
           <div className="field"><label htmlFor="password">Mật khẩu</label><div className="password-wrap"><input ref={passwordInput} id="password" name="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(event: ChangeEvent<HTMLInputElement>) => setPassword(event.target.value)} autoComplete="current-password" placeholder="Nhập mật khẩu" required /><button className="password-toggle" type="button" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowPassword((value) => !value)}><i className="icon fa-solid fa-eye" aria-hidden="true" /></button></div></div>
-          <p className="form-error" role="alert" aria-live="polite">{error}</p>
+          <p className="form-error" role="alert" aria-live="polite">{error || sessionError}</p>
           {success && <p className="form-success" role="status">{success}</p>}
           <button className="submit-button" type="submit" disabled={isSubmitting || Boolean(success)}>{isSubmitting ? <><i className="fa-solid fa-spinner fa-spin" aria-hidden="true" />Đang đăng nhập...</> : success ? 'Đăng nhập thành công' : <>Vào hệ thống <i className="icon fa-solid fa-arrow-right" aria-hidden="true" /></>}</button>
         </form>

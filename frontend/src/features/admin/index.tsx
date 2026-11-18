@@ -1,7 +1,5 @@
 import { useMemo, useState, type ChangeEvent, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from 'react';
-import { formatMoney } from '../../../utils/helper.ts';
-import { can } from '../../../utils/permissions.ts';
-import type { User } from '../../../utils/types.ts';
+import { formatMoney } from '../../lib/format.ts';
 
 const money = formatMoney;
 
@@ -122,25 +120,29 @@ const tableFields: Record<string, string[]> = {
   'top-items': ['rank', 'name', 'quantity', 'amount', 'share']
 };
 
-interface FRPageProps {
+interface FeaturePagesProps {
   view: string;
-  user: User;
-  shiftOpen: boolean;
-  setShiftOpen: Dispatch<SetStateAction<boolean>>;
   onToast: (message: string) => void;
 }
 
-export function FRPage({ view, user, shiftOpen, setShiftOpen, onToast }: FRPageProps) {
-  if (view === 'shifts') return <ShiftPage user={user} isOpen={shiftOpen} setIsOpen={setShiftOpen} onToast={onToast} />;
-  if (view === 'taps') return <TapPage onToast={onToast} />;
-  if (view === 'kegLoss') return <KegLossPage />;
+export function AdminPage({ view, onToast }: FeaturePagesProps) {
   const config = datasets[view];
-  if (config) return <RecordsPage key={view} config={config} onToast={onToast} filters={view === 'topItems' || view === 'voids'} />;
-  return <ReportsPage />;
+  if (!config || view === 'voids' || view === 'topItems') return null;
+  return <RecordsPage key={view} config={config} onToast={onToast} />;
+}
+
+export function ReportRecords({ view, onToast }: FeaturePagesProps) {
+  const config = datasets[view];
+  if (!config || (view !== 'voids' && view !== 'topItems')) return null;
+  return <RecordsPage key={view} config={config} onToast={onToast} filters />;
 }
 
 function PageHeading({ title, subtitle, action }: { title: string; subtitle: string; action?: ReactNode }) {
   return <div className="page-heading"><div><span className="eyebrow">Giao diện theo đặc tả</span><h1>{title}</h1><p>{subtitle}</p></div>{action}</div>;
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return <article className="metric-card"><div className="metric-top">{label}</div><div className="metric-value">{value}</div><div className="metric-foot">Dữ liệu minh họa</div></article>;
 }
 
 function RecordsPage({ config, onToast, filters = false }: { config: DatasetConfig; onToast: (message: string) => void; filters?: boolean }) {
@@ -243,57 +245,4 @@ function TopItemsCharts() {
     <section className="panel report-panel"><header className="panel-header"><div><h2 className="panel-title">Top 10 món bán chạy</h2><div className="panel-subtitle">Biểu đồ theo số lượng hoặc doanh thu</div></div></header><div className="top-item-bars">{amounts.map((height, index) => <div key={index}><span style={{ height: `${height}%` }} /><small>{index + 1}</small></div>)}</div></section>
     <section className="panel report-panel"><header className="panel-header"><div><h2 className="panel-title">Doanh thu theo giờ</h2><div className="panel-subtitle">Tính theo thời điểm thanh toán</div></div></header><div className="feature-hour-bars">{[20, 25, 30, 48, 62, 82, 92, 75, 58, 36, 20, 10].map((height, index) => <div className="feature-hour-group" key={index}><span style={{ height: `${height}%` }} /></div>)}</div><div className="chart-labels report-labels"><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span><span>21:00</span></div></section>
   </div>;
-}
-
-function ShiftPage({ user, isOpen, setIsOpen, onToast }: { user: User; isOpen: boolean; setIsOpen: Dispatch<SetStateAction<boolean>>; onToast: (message: string) => void }) {
-  const [countedCash, setCountedCash] = useState('');
-  const expectedCash = 2500000 + 6820000;
-  return <main className="page-content feature-content"><PageHeading title="Mở / đóng ca" subtitle="FR-09 · Theo dõi tiền đầu ca, doanh thu và chênh lệch" action={<span className={`status-pill${isOpen ? '' : ' pending'}`}>{isOpen ? 'Ca đang mở' : 'Chưa mở ca'}</span>} />
-    <section className="report-metrics"><Metric label="Tiền đầu ca" value={money(isOpen ? 2500000 : 0)} /><Metric label="Tiền mặt thu trong ca" value={money(isOpen ? 6820000 : 0)} /><Metric label="Chuyển khoản" value={money(isOpen ? 4380000 : 0)} /><Metric label="Hóa đơn" value={isOpen ? '42' : '0'} /></section>
-    <section className="panel shift-page-card"><header className="panel-header"><div><h2 className="panel-title">Ca chiều · 14:00 – hiện tại</h2><div className="panel-subtitle">Nhân viên: Nguyễn Thị Lan · Quản lý: Lê Văn Hùng</div></div>{!isOpen ? <button className="button-primary" type="button" onClick={() => { setIsOpen(true); onToast('Đã mở ca demo.'); }}>Mở ca</button> : can(user, 'shifts:close') && <button className="button-secondary" type="button" onClick={() => { setIsOpen(false); onToast('Đã đóng ca demo.'); }}>Đóng ca</button>}</header>
-      {isOpen && <div className="shift-close-form"><label className="modal-field"><span>Tiền mặt đếm được (₫)</span><input type="number" min="0" value={countedCash} onChange={(event) => setCountedCash(event.target.value)} placeholder="Nhập số tiền trong két" /></label><div className="shift-difference"><span>Dự kiến trong két: <strong>{money(expectedCash)}</strong></span><span>Chênh lệch: <strong>{money((Number(countedCash) || 0) - expectedCash)}</strong></span></div>{!can(user, 'shifts:close') && <p className="form-hint">Chỉ Quản lý ca hoặc Chủ quán mới có thể đóng ca.</p>}</div>}
-    </section>
-  </main>;
-}
-
-function TapPage({ onToast }: { onToast: (message: string) => void }) {
-  const [taps, setTaps] = useState([{ name: 'Vòi 1', keg: 'KEG-0008', beer: 'Bia hơi Hà Nội', sold: 46, capacity: 50 }, { name: 'Vòi 2', keg: 'KEG-0006', beer: 'Bia hơi Hải Phòng', sold: 27, capacity: 30 }, { name: 'Vòi 3', keg: 'Chưa gắn keg', beer: '—', sold: 0, capacity: 50 }]);
-  const [confirmTap, setConfirmTap] = useState<number | null>(null);
-  const replaceTap = (index: number) => {
-    setTaps((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, keg: `KEG-00${11 + itemIndex}`, sold: 0 } : item));
-    setConfirmTap(null);
-    onToast('Đã cập nhật keg demo cho vòi.');
-  };
-  return <main className="page-content feature-content"><PageHeading title="Vòi bia & thay keg" subtitle="FR-10 · Theo dõi keg đang dùng và thể tích bia đã bán" />
-    <div className="tap-grid">{taps.map((tap, index) => <article className="panel tap-card" key={tap.name}><header><span className="tap-icon"><i className="icon fa-solid fa-beer-mug-empty" /></span><div><h2>{tap.name}</h2><p>{tap.beer} · {tap.keg}</p></div><span className="status-pill">{tap.keg === 'Chưa gắn keg' ? 'Sẵn sàng' : 'Đang dùng'}</span></header><div className="tap-progress-label"><span>Đã bán</span><strong>{tap.sold} / {tap.capacity} L</strong></div><div className="tap-progress"><span style={{ width: `${Math.min(100, tap.sold / tap.capacity * 100)}%` }} /></div><div className="tap-card-footer"><span>Còn khoảng {Math.max(0, tap.capacity - tap.sold)} L</span><button className="button-secondary" type="button" onClick={() => tap.sold / tap.capacity < .9 ? setConfirmTap(index) : replaceTap(index)}>Thay keg</button></div></article>)}</div>
-    {confirmTap !== null && <div className="modal-backdrop"><section className="modal" role="dialog" aria-modal="true" aria-labelledby="tap-confirm-title"><header className="modal-header"><h2 id="tap-confirm-title">Xác nhận thay keg</h2><button className="modal-close" type="button" onClick={() => setConfirmTap(null)} aria-label="Đóng"><i className="icon fa-solid fa-xmark" /></button></header><div className="modal-body"><p>Keg mới bán {Math.round(taps[confirmTap].sold / taps[confirmTap].capacity * 100)}% dung tích. Phần bia còn lại sẽ được tính là hao hụt.</p></div><footer className="modal-footer"><button className="button-secondary" type="button" onClick={() => setConfirmTap(null)}>Hủy</button><button className="button-primary" type="button" onClick={() => replaceTap(confirmTap)}>Xác nhận thay</button></footer></section></div>}
-  </main>;
-}
-
-function KegLossPage() {
-  const [threshold, setThreshold] = useState('5');
-  return <main className="page-content feature-content"><PageHeading title="Hao hụt keg" subtitle="FR-17 · Đối chiếu lượng bia xuất keg và lượng bán ra" />
-    <div className="feature-filters panel"><label>Từ ngày<input type="date" defaultValue="2026-11-01" /></label><label>Đến ngày<input type="date" defaultValue="2026-11-10" /></label><label>Ngưỡng cảnh báo (%)<input type="number" min="0" max="100" value={threshold} onChange={(event) => setThreshold(event.target.value)} /></label><button className="button-primary" type="button">Lọc báo cáo</button></div>
-    <section className="report-metrics"><Metric label="Tổng hao hụt" value="6,5 L" /><Metric label="Giá trị ước tính" value={money(195000)} /><Metric label="Keg đã hết" value="4" /><Metric label="Ngưỡng cảnh báo" value={`${threshold}%`} /></section>
-    <DataTable columns={['Mã keg', 'Loại bia', 'Vòi', 'Dung tích', 'Đã bán', 'Hao hụt', 'Tỷ lệ', 'Trạng thái']} rows={[
-      ['KEG-0007', 'Bia hơi Hà Nội', 'Vòi 1', '50 L', '46 L', '4 L', '8%', 'Cảnh báo'],
-      ['KEG-0005', 'Bia hơi Hải Phòng', 'Vòi 2', '30 L', '28,8 L', '1,2 L', '4%', 'Bình thường'],
-      ['KEG-0004', 'Bia hơi Hà Nội', 'Vòi 1', '50 L', '48,5 L', '1,5 L', '3%', 'Bình thường']
-    ]} />
-  </main>;
-}
-
-function ReportsPage() {
-  return <main className="page-content reports-content"><PageHeading title="Tổng quan hôm nay" subtitle="FR-16 · Doanh thu đã thu, tạm tính và tình hình hoạt động" action={<span className="report-updated">Cập nhật lúc 17:30 · Dữ liệu minh họa</span>} />
-    <section className="report-metrics"><Metric label="Doanh thu đã thu" value={money(12840000)} change="+8,4% so cùng giờ hôm qua" /><Metric label="Tạm tính đang mở" value={money(6420000)} change="6 bàn" /><Metric label="Bàn đang ngồi" value="25 / 80" change="31% công suất" /><Metric label="Số hóa đơn" value="42" change="+5,2% so cùng giờ hôm qua" /></section>
-    <div className="report-grid"><section className="panel report-panel"><header className="panel-header"><div><h2 className="panel-title">Doanh thu theo giờ</h2><div className="panel-subtitle">Hôm nay so với cùng giờ hôm qua</div></div></header><div className="feature-hour-bars">{[38, 51, 42, 69, 54, 82, 63, 91, 72, 48, 34, 20].map((height, index) => <div className="feature-hour-group" key={index}><span style={{ height: `${height}%` }} /><i style={{ height: `${height * .65}%` }} /></div>)}</div><div className="report-legend"><span>● Hôm nay</span><span>● Hôm qua</span></div></section><section className="panel payment-panel"><header className="panel-header"><div><h2 className="panel-title">Phương thức thanh toán</h2><div className="panel-subtitle">Tỷ lệ doanh thu đã thu</div></div></header><div className="payment-breakdown feature-breakdown"><div><span>Tiền mặt</span><strong>68% · {money(8731200)}</strong></div><div><span>Chuyển khoản</span><strong>32% · {money(4108800)}</strong></div></div></section></div>
-  </main>;
-}
-
-function Metric({ label, value, change }: { label: string; value: string; change?: string }) {
-  return <article className="metric-card"><div className="metric-top">{label}</div><div className="metric-value">{value}</div><div className="metric-foot">{change || 'Dữ liệu minh họa'}</div></article>;
-}
-
-function DataTable({ columns, rows }: { columns: string[]; rows: string[][] }) {
-  return <section className="panel feature-panel"><header className="panel-header"><div><h2 className="panel-title">Chi tiết theo keg</h2><div className="panel-subtitle">Dữ liệu minh họa</div></div></header><div className="table-wrap"><table><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index}>{row.map((value, cell) => <td key={cell}>{value}</td>)}</tr>)}</tbody></table></div></section>;
 }

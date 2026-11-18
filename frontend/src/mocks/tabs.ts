@@ -1,5 +1,5 @@
-import { cacheService } from './cache-service.ts';
-import type { AdjustmentAction, Area, CompletedBill, DiningTable, MenuItem, OrderLine, OrderRound, PaymentDetails, PosData, TableStatus } from '../utils/types.ts';
+import { cacheService } from '../lib/storage.ts';
+import type { AdjustmentAction, Area, CompletedBill, DiningTable, MenuItem, OrderLine, OrderRound, PaymentDetails, PosData, TableStatus } from '../types/index.ts';
 
 const STORAGE_KEY = 'pos-demo-data';
 const AREAS: Area[] = [

@@ -1,29 +1,27 @@
-# quan-ly-quay-bia-nhom-7
+# Quản lý quầy bia
 
 ## Chạy ứng dụng
 
-Yêu cầu Node.js 18 trở lên. Giao diện được viết bằng React 19 và TypeScript.
+Yêu cầu Node.js 20.19+ hoặc 22.12+. Giao diện React 19/TypeScript nằm trong `frontend/`.
 
 ```sh
+cd frontend
 npm install
+cp .env.example .env
 npm run dev
 ```
 
-Mở URL Vite hiển thị trong terminal. Trang đăng nhập nằm ở `/`, dashboard ở `/dashboard.html`.
+Mặc định `VITE_USE_MOCK=true` để chạy với dữ liệu demo lưu trong trình duyệt. Đặt `VITE_USE_MOCK=false` và cấu hình `VITE_API_BASE_URL` trong `.env` để dùng backend. Chạy `npm run typecheck` để kiểm tra kiểu hoặc `npm run build` để tạo bản production tại `frontend/dist/`.
 
-Chạy `npm run typecheck` để kiểm tra kiểu. `npm run build` tự chạy type-check trước khi build production.
+Đăng nhập demo (mật khẩu `123456`):
 
-Tài khoản demo:
+- Nhân viên: `lan@biahoi.vn` hoặc `minh@biahoi.vn`
+- Quản lý ca: `hung@biahoi.vn`
+- Chủ quán: `hoa@biahoi.vn`
+- Tài khoản bị khóa: `khoa@biahoi.vn`
 
-- Nhân viên: `lan@biahoi.vn` hoặc `minh@biahoi.vn` / `123456`
-- Quản lý ca: `hung@biahoi.vn` / `123456`
-- Chủ quán: `hoa@biahoi.vn` / `123456`
-- Tài khoản đã khóa: `khoa@biahoi.vn`
+## Cấu trúc và phân quyền
 
-Ứng dụng hiện dùng `localStorage` cho phiên đăng nhập và dữ liệu giao diện demo; dữ liệu chưa đồng bộ giữa nhiều thiết bị và chưa kết nối API backend. Chạy `npm run build` để tạo bản production đa trang trong `dist/`.
+SPA dùng React Router; API client và mock nằm trong `frontend/src/api/` và `frontend/src/mocks/`. Giao diện được tổ chức theo phân hệ trong `frontend/src/features/` (quầy, quản trị, báo cáo). Ma trận quyền nằm trong `frontend/src/lib/permissions.ts`; menu và bộ nạp chức năng đều kiểm tra quyền trước khi hiển thị.
 
-## Giao diện theo SRS
-
-Sau khi đăng nhập, các màn hình được đăng ký theo phân hệ trong `assets/js/modules`: Quầy (FR-02–10), Quản trị (FR-11–15) và Báo cáo (FR-16–19). Vai trò và quyền của từng chức năng được khai báo tại `utils/permissions.ts`; menu chỉ hiện chức năng được phép và bộ nạp module kiểm tra quyền lần nữa trước khi hiển thị nội dung. Ví dụ, Quản lý ca xem tổng quan/ngày và nhật ký hủy giảm, còn hao hụt keg, món bán chạy và các cấu hình quản trị chỉ dành cho Chủ quán.
-
-Đây là prototype giao diện với dữ liệu minh họa. Kiểm tra quyền ở frontend chỉ phục vụ giao diện, không thay thế kiểm tra quyền ở backend; đăng nhập/phân quyền API, lưu lịch sử, đồng bộ đa thiết bị, VietQR thật, nhật ký kiểm toán và nghiệp vụ kho cần được nối với API trước khi nghiệm thu.
+Đây là prototype: quyền frontend chỉ điều khiển giao diện, backend vẫn phải xác thực/ủy quyền mọi request. VietQR hiện là mô phỏng; nhật ký kiểm toán và các nghiệp vụ cần dữ liệu thật phụ thuộc vào backend.

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { can } from '../../../utils/permissions.ts';
-import type { User } from '../../../utils/types.ts';
+import { can } from '../lib/permissions.ts';
+import type { User } from '../types/index.ts';
 import { FEATURE_MODULES } from './registry.ts';
 
 interface ModuleLoaderProps {

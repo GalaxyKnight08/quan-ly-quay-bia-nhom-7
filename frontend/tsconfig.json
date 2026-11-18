@@ -12,7 +12,11 @@
     "jsx": "react-jsx",
     "strict": true,
     "noEmit": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "types": ["vite/client"]
   },
-  "include": ["assets/js/**/*.ts", "assets/js/**/*.tsx", "services/**/*.ts", "utils/**/*.ts"]
+  "include": ["src"]
 }

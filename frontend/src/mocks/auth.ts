@@ -1,22 +1,15 @@
-import { APP_CONFIG } from '../utils/config.ts';
-import { cacheService } from './cache-service.ts';
-import type { User } from '../utils/types.ts';
+import type { AuthSession, User } from '../types/index.ts';
 
-const SESSION_KEY = 'session';
+const demoAccounts: Array<User & { password: string }> = [
+  { email: 'lan@biahoi.vn', password: '123456', role: 'staff', name: 'Nguyễn Thị Lan' },
+  { email: 'minh@biahoi.vn', password: '123456', role: 'staff', name: 'Trần Văn Minh' },
+  { email: 'hung@biahoi.vn', password: '123456', role: 'manager', name: 'Lê Văn Hùng' },
+  { email: 'hoa@biahoi.vn', password: '123456', role: 'owner', name: 'Phạm Thị Hoa' }
+];
 
-export const authService = {
-  async login(email: string, password: string): Promise<User> {
-    const account = APP_CONFIG.demoAccounts.find((item) => item.email === email.trim().toLocaleLowerCase('vi')
-      && item.password === password);
-    if (!account) throw new Error('Email hoặc mật khẩu không đúng');
-    const user = { name: account.name, email: account.email, role: account.role };
-    cacheService.set(SESSION_KEY, user);
-    return user;
-  },
-  currentUser(): User | null {
-    return cacheService.get<User>(SESSION_KEY);
-  },
-  logout() {
-    cacheService.remove(SESSION_KEY);
-  }
-};
+export async function mockLogin(email: string, password: string): Promise<AuthSession> {
+  const account = demoAccounts.find((item) => item.email === email.trim().toLocaleLowerCase('vi') && item.password === password);
+  if (!account) throw new Error('Email hoặc mật khẩu không đúng');
+  const { name, role } = account;
+  return { token: `mock-token-${Date.now()}`, user: { name, email: account.email, role } };
+}

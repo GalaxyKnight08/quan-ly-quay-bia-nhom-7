@@ -1,4 +1,4 @@
-import type { User, UserRole } from './types.ts';
+import type { User, UserRole } from '../types/index.ts';
 
 export type Permission =
   | 'tables:view'

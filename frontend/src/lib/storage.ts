@@ -1,6 +1,8 @@
-import { APP_CONFIG } from '../utils/config.ts';
+import { APP_CONFIG } from './config.ts';
+import type { AuthSession } from '../types/index.ts';
 
 const keyFor = (key: string) => `${APP_CONFIG.storagePrefix}:${key}`;
+const SESSION_KEY = 'session';
 
 export const cacheService = {
   get<T>(key: string, fallback: T | null = null): T | null {
@@ -19,3 +21,7 @@ export const cacheService = {
     localStorage.removeItem(keyFor(key));
   }
 };
+
+export const getStoredSession = () => cacheService.get<AuthSession>(SESSION_KEY);
+export const saveStoredSession = (session: AuthSession) => cacheService.set(SESSION_KEY, session);
+export const clearStoredSession = () => cacheService.remove(SESSION_KEY);
