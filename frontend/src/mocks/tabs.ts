@@ -24,18 +24,49 @@ const createInitialData = (): PosData => {
     const number = area.firstTable + index;
     const isOccupied = number <= 25;
     const status: TableStatus = !isOccupied ? 'empty' : number > 20 ? 'provisional' : 'occupied';
+    const openedAt = isOccupied ? new Date(Date.now() - (number % 90 + 15) * 60000).toISOString() : null;
+    const rounds = openedAt ? createMockRounds(number, openedAt) : [];
     return {
       id: number,
       areaId: area.id,
       status,
       guestCount: isOccupied ? (number % 5) + 2 : 0,
-      openedAt: isOccupied ? new Date(Date.now() - (number % 90 + 15) * 60000).toISOString() : null,
-      total: isOccupied ? 150000 + (number - 1) * 8900 : 0,
-      rounds: []
+      openedAt,
+      total: getRoundsTotal(rounds),
+      rounds
     };
   }));
   return { areas: AREAS, tables, completedBills: [] };
 };
+
+function createMockRounds(tableId: number, openedAt: string): OrderRound[] {
+  const openedTime = new Date(openedAt).getTime();
+  const roundCount = 1 + (tableId % 3);
+
+  return Array.from({ length: roundCount }, (_, roundIndex) => {
+    const firstItem = MENU[(tableId + roundIndex) % MENU.length];
+    const secondItem = MENU[(tableId + roundIndex + 3) % MENU.length];
+    const elapsed = Date.now() - openedTime;
+    const lines: OrderLine[] = [
+      { ...firstItem, id: `mock-${tableId}-${roundIndex + 1}-1`, quantity: 1 + ((tableId + roundIndex) % 3) },
+      { ...secondItem, id: `mock-${tableId}-${roundIndex + 1}-2`, quantity: 1 + ((tableId + roundIndex + 1) % 2) }
+    ];
+
+    return {
+      id: `mock-${tableId}-${roundIndex + 1}`,
+      sentAt: new Date(openedTime + elapsed * (roundIndex + 1) / (roundCount + 1)).toISOString(),
+      staffName: ['Lan', 'Minh', 'Hùng'][(tableId + roundIndex) % 3],
+      lines
+    };
+  });
+}
+
+function getRoundsTotal(rounds: OrderRound[]) {
+  return rounds.reduce((total, round) => total + round.lines.reduce(
+    (roundTotal, line) => roundTotal + line.price * line.quantity,
+    0
+  ), 0);
+}
 
 const save = (data: PosData): PosData => {
   cacheService.set(STORAGE_KEY, data);
@@ -46,11 +77,21 @@ export const posService = {
   getData() {
     const data = cacheService.get<PosData>(STORAGE_KEY);
     if (!data) return save(createInitialData());
+    let updated = false;
+    data.tables.forEach((table) => {
+      if (table.status !== 'empty' && !table.rounds?.length && table.total > 0) {
+        const openedAt = table.openedAt ?? new Date(Date.now() - 30 * 60000).toISOString();
+        table.openedAt = openedAt;
+        table.rounds = createMockRounds(table.id, openedAt);
+        table.total = getRoundsTotal(table.rounds);
+        updated = true;
+      }
+    });
     if (!data.completedBills) {
       data.completedBills = [];
-      return save(data);
+      updated = true;
     }
-    return data;
+    return updated ? save(data) : data;
   },
   openTable(tableId: number, guestCount: number | null) {
     const data = this.getData();
