@@ -1,24 +1,10 @@
 import { useState } from 'react';
 import { authService } from '../../services/auth-service.ts';
-import { roleLabel } from '../../utils/permissions.ts';
+import { can, roleLabel } from '../../utils/permissions.ts';
 import { formatDate, initials } from '../../utils/helper.ts';
 import type { User } from '../../utils/types.ts';
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
-
-const links: { view: string; label: string; icon: string; group: string; managerOnly?: boolean }[] = [
-  { view: 'tables', label: 'Sơ đồ bàn', icon: 'fa-table-cells-large', group: 'Quầy' },
-  { view: 'shifts', label: 'Mở / đóng ca', icon: 'fa-clock', group: 'Quầy' },
-  { view: 'taps', label: 'Vòi & keg', icon: 'fa-beer-mug-empty', group: 'Quầy' },
-  { view: 'reports', label: 'Tổng quan hôm nay', icon: 'fa-chart-line', managerOnly: true, group: 'Báo cáo' },
-  { view: 'kegLoss', label: 'Hao hụt keg', icon: 'fa-chart-column', managerOnly: true, group: 'Báo cáo' },
-  { view: 'voids', label: 'Nhật ký hủy / giảm', icon: 'fa-receipt', managerOnly: true, group: 'Báo cáo' },
-  { view: 'topItems', label: 'Món bán chạy', icon: 'fa-ranking-star', managerOnly: true, group: 'Báo cáo' },
-  { view: 'menu', label: 'Thực đơn & bếp', icon: 'fa-utensils', managerOnly: true, group: 'Quản trị' },
-  { view: 'areas', label: 'Khu & bàn', icon: 'fa-chair', managerOnly: true, group: 'Quản trị' },
-  { view: 'staff', label: 'Nhân viên', icon: 'fa-users', managerOnly: true, group: 'Quản trị' },
-  { view: 'kegs', label: 'Nhập kho keg', icon: 'fa-boxes-stacked', managerOnly: true, group: 'Quản trị' },
-  { view: 'happyHours', label: 'Giá giờ vàng', icon: 'fa-tags', managerOnly: true, group: 'Quản trị' }
-];
+import { FEATURE_MODULES } from './modules/registry.ts';
 
 interface DashboardLayoutProps {
   user: User;
@@ -31,7 +17,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ user, occupiedCount, shiftOpen, activeView, onNavigate, children }: DashboardLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const activeLink = links.find((link) => link.view === activeView);
+  const activeLink = FEATURE_MODULES.find((link) => link.view === activeView);
   const activeLabel = activeLink?.label || 'Sơ đồ bàn';
   const signOut = () => {
     authService.logout();
@@ -59,8 +45,8 @@ function Sidebar({ user, occupiedCount, shiftOpen, activeView, onNavigate, onSig
   return <aside className={`sidebar${mobileOpen ? ' is-open' : ''}`} aria-label="Điều hướng chính">
     <a className="brand-mark" href="./dashboard.html"><span className="brand-symbol"><i className="icon fa-solid fa-beer-mug-empty" aria-hidden="true" /></span><span>quầy bia<span style={{ color: 'var(--green)' }}>.</span></span></a>
     <div className="workspace-label">Không gian làm việc</div>
-    <nav className="nav-list">{['Quầy', 'Báo cáo', 'Quản trị'].map((group) => {
-      const visibleLinks = links.filter((link) => link.group === group && (!link.managerOnly || ['manager', 'owner'].includes(user.role)));
+    <nav className="nav-list">{(['Quầy', 'Báo cáo', 'Quản trị'] as const).map((group) => {
+      const visibleLinks = FEATURE_MODULES.filter((link) => link.group === group && can(user, link.permission));
       if (!visibleLinks.length) return null;
       return <div className="nav-group" key={group}><div className="nav-group-title">{group}</div>{visibleLinks.map((link) => <a className="nav-link" href={`#${link.view}`} key={link.view} aria-current={link.view === activeView ? 'page' : undefined} onClick={(event) => { event.preventDefault(); setMobileOpen(false); onNavigate(link.view); }}><i className={`icon fa-solid ${link.icon}`} aria-hidden="true" />{link.label}{link.view === 'tables' && <span className="nav-count">{occupiedCount}</span>}</a>)}</div>;
     })}</nav>

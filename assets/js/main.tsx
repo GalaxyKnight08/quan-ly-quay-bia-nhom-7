@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AuthPage } from './auth.tsx';
-import { DashboardPage } from './pos.tsx';
+import { DashboardPage } from './modules/counter.tsx';
 import { RouteGuard } from './route-guard.tsx';
 
 const isDashboard = document.body.dataset.page === 'dashboard';

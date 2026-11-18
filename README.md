@@ -24,6 +24,6 @@ Tài khoản demo:
 
 ## Giao diện theo SRS
 
-Sau khi đăng nhập, thanh điều hướng có các màn hình mẫu cho FR-01 đến FR-19: sơ đồ bàn và phiên bàn; gọi món, in tạm tính, chuyển/gộp bàn, hủy/giảm; thanh toán; ca làm việc; vòi và kho keg; thực đơn, khu/bàn, nhân viên, giá giờ vàng; tổng quan và các báo cáo. Tài khoản quản lý ca/chủ quán có thêm các màn báo cáo và quản trị.
+Sau khi đăng nhập, các màn hình được đăng ký theo phân hệ trong `assets/js/modules`: Quầy (FR-02–10), Quản trị (FR-11–15) và Báo cáo (FR-16–19). Vai trò và quyền của từng chức năng được khai báo tại `utils/permissions.ts`; menu chỉ hiện chức năng được phép và bộ nạp module kiểm tra quyền lần nữa trước khi hiển thị nội dung. Ví dụ, Quản lý ca xem tổng quan/ngày và nhật ký hủy giảm, còn hao hụt keg, món bán chạy và các cấu hình quản trị chỉ dành cho Chủ quán.
 
-Đây là prototype giao diện với dữ liệu minh họa. Các thao tác chưa thay thế backend: đăng nhập/phân quyền, lưu lịch sử, đồng bộ đa thiết bị, VietQR thật, nhật ký kiểm toán và nghiệp vụ kho cần được nối với API trước khi nghiệm thu.
+Đây là prototype giao diện với dữ liệu minh họa. Kiểm tra quyền ở frontend chỉ phục vụ giao diện, không thay thế kiểm tra quyền ở backend; đăng nhập/phân quyền API, lưu lịch sử, đồng bộ đa thiết bị, VietQR thật, nhật ký kiểm toán và nghiệp vụ kho cần được nối với API trước khi nghiệm thu.

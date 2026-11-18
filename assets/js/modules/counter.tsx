@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
-import { authService } from '../../services/auth-service.ts';
-import { MENU, posService } from '../../services/pos-service.ts';
-import { formatMoney, formatTime } from '../../utils/helper.ts';
-import { DashboardLayout } from './layout.tsx';
-import { FRPage } from './fr-pages.tsx';
-import type { CompletedBill, DiningTable, MenuItem, OrderLine, PaymentDetails, User } from '../../utils/types.ts';
-import type { AdjustmentAction } from '../../utils/types.ts';
+import { authService } from '../../../services/auth-service.ts';
+import { MENU, posService } from '../../../services/pos-service.ts';
+import { formatMoney, formatTime } from '../../../utils/helper.ts';
+import { can } from '../../../utils/permissions.ts';
+import { DashboardLayout } from '../layout.tsx';
+import { ModuleLoader } from './loader.tsx';
+import { FRPage } from './pages.tsx';
+import type { CompletedBill, DiningTable, MenuItem, OrderLine, PaymentDetails, User } from '../../../utils/types.ts';
+import type { AdjustmentAction } from '../../../utils/types.ts';
 
 type DraftLine = MenuItem & { quantity: number };
 interface Adjustment {
@@ -30,7 +32,7 @@ export function DashboardPage() {
   const user = authService.currentUser();
   const [data, setData] = useState(() => posService.getData());
   const [areaId, setAreaId] = useState('inside');
-  const [activeView, setActiveView] = useState(['manager', 'owner'].includes(user?.role ?? '') ? 'reports' : 'tables');
+  const [activeView, setActiveView] = useState(can(user, 'reports:today') ? 'reports' : 'tables');
   const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
   const [paymentTableId, setPaymentTableId] = useState<number | null>(null);
   const [openTableId, setOpenTableId] = useState<number | null>(null);
@@ -141,8 +143,9 @@ export function DashboardPage() {
       activeView={activeView}
       onNavigate={(view) => setActiveView(view)}
     >
-      {activeView === 'tables'
-        ? <main className="page-content pos-content">
+      <ModuleLoader view={activeView} user={user}>
+        {activeView === 'tables'
+          ? <main className="page-content pos-content">
           <div className="page-heading"><div><span className="eyebrow">Phân hệ Quầy</span><h1>Sơ đồ bàn</h1><p>Chọn bàn để mở phiên hoặc tiếp tục phục vụ khách.</p></div><div className="shift-reminder"><span className="shift-dot" />{shiftOpen ? 'Ca đang mở' : 'Chưa mở ca'}</div></div>
           <section className="pos-summary" aria-label="Tình trạng bàn">
             <div className="pos-summary-item"><span className="table-state-dot empty" />Bàn trống <strong>{80 - occupiedCount}</strong></div>
@@ -165,8 +168,9 @@ export function DashboardPage() {
               </button>)}
             </div>
           </section>
-        </main>
-        : <FRPage view={activeView} user={user} shiftOpen={shiftOpen} setShiftOpen={setShiftOpen} onToast={setToast} />}
+          </main>
+          : <FRPage view={activeView} user={user} shiftOpen={shiftOpen} setShiftOpen={setShiftOpen} onToast={setToast} />}
+      </ModuleLoader>
     </DashboardLayout>
     {openTableId !== null && <OpenTableDialog tableId={openTableId} onCancel={() => setOpenTableId(null)} onConfirm={handleOpenTable} />}
     {selectedTable && <TableSessionDialog table={selectedTable} tables={data.tables} user={user} onClose={() => setSelectedTableId(null)} onAddRound={handleAddRound} onProvisional={handleProvisional} onPayment={() => setPaymentTableId(selectedTableId)} onMoveMerge={handleMoveMerge} onAdjustment={handleAdjustment} />}
