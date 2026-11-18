@@ -8,9 +8,9 @@ export const formatTime = (value: string | Date) => new Intl.DateTimeFormat(APP_
   hour: '2-digit', minute: '2-digit'
 }).format(new Date(value));
 
-export const formatDate = (value = new Date()) => new Intl.DateTimeFormat(APP_CONFIG.locale, {
+export const formatDate = (value: string | Date = new Date()) => new Intl.DateTimeFormat(APP_CONFIG.locale, {
   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-}).format(value);
+}).format(new Date(value));
 
 export const initials = (name = '') => name.trim().split(/\s+/).slice(-2).map((part) => part[0] || '').join('').toUpperCase();
 

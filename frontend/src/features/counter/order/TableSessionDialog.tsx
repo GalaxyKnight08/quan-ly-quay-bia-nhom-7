@@ -137,9 +137,27 @@ function KitchenTicketDocument({ tableId, round, ticket }: { tableId: number; ro
 function ProvisionalDocument({ table, count, printedAt }: { table: DiningTable; count: number; printedAt: string }) {
   const lines = groupReceiptLines(table.rounds.flatMap((round) => round.lines));
 
-  return <>
-    <header className="receipt-head"><strong>TẠM TÍNH · BÀN {table.id}</strong></header>
-    <div className="receipt-lines">{lines.map((line, index) => <div className="receipt-line" key={`${line.name}-${index}`}><span>{line.name} × {line.quantity}</span><strong>{formatMoney(line.total)}</strong></div>)}</div>
-    <div className="receipt-total grand"><span>{`Tạm tính — lần in ${count} — ${formatTime(printedAt)}`}</span><strong>{formatMoney(table.total)}</strong></div>
-  </>;
+  return <article className="receipt-document">
+    <header className="receipt-brand">
+      <strong>QUẢN LÝ QUẦY BIA</strong>
+      <span>TẠM TÍNH · BÀN {table.id}</span>
+    </header>
+    <div className="receipt-meta">
+      <div><span>Lần in</span><strong>{count}</strong></div>
+      <div><span>Giờ</span><strong>{formatTime(printedAt)}</strong></div>
+    </div>
+    <div className="receipt-table">
+      <div className="receipt-table-head" aria-hidden="true">
+        <span>Tên món</span><span>SL</span><span>Thành tiền</span>
+      </div>
+      <div className="receipt-lines">{lines.map((line, index) => <div className="receipt-line" key={`${line.name}-${index}`}>
+        <span className="receipt-item-name">{line.name}</span>
+        <span className="receipt-item-quantity">{line.quantity}</span>
+        <strong>{formatMoney(line.total)}</strong>
+      </div>)}</div>
+    </div>
+    <div className="receipt-summary">
+      <div className="receipt-total grand"><span>Tạm tính</span><strong>{formatMoney(table.total)}</strong></div>
+    </div>
+  </article>;
 }
