@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getMenu, getPosData, openTable, addRound, markProvisional, moveTable, adjustOrderLine, payTable } from '../../../api/tabs.ts';
 import { formatMoney } from '../../../lib/format.ts';
 import { can } from '../../../lib/permissions.ts';
@@ -10,7 +10,7 @@ import { TableSessionDialog } from '../order/TableSessionDialog.tsx';
 import { PaymentDialog } from '../payment/PaymentDialog.tsx';
 import { FeatureRouter } from '../../FeatureRouter.tsx';
 import { ModuleLoader } from '../../ModuleLoader.tsx';
-import type { CompletedBill, DiningTable, MenuItem, OrderAdjustment, OrderLine, PaymentDetails, PosData, User } from '../../../types/index.ts';
+import type { CompletedBill, DiningTable, MenuItem, OrderAdjustment, OrderLine, OrderRound, PaymentDetails, PosData, User } from '../../../types/index.ts';
 
 const money = (value: number) => formatMoney(value);
 
@@ -32,6 +32,7 @@ export function DashboardPage() {
   const [shiftOpen, setShiftOpen] = useState(false);
   const [toast, setToast] = useState('');
   const [receipt, setReceipt] = useState<CompletedBill | null>(null);
+  const provisionalCounts = useRef<Record<number, number>>({});
   const selectedTable = data?.tables.find((table) => table.id === selectedTableId);
   const paymentTable = data?.tables.find((table) => table.id === paymentTableId);
 
@@ -41,6 +42,9 @@ export function DashboardPage() {
       try {
         const [nextData, nextMenu] = await Promise.all([getPosData(), getMenu()]);
         if (active) {
+          nextData.tables.forEach((table) => {
+            table.provisionalCount = Math.max(table.provisionalCount ?? 0, provisionalCounts.current[table.id] ?? 0);
+          });
           setData(nextData);
           setMenuItems(nextMenu);
         }
@@ -80,34 +84,49 @@ export function DashboardPage() {
   const handleOpenTable = async (guestCount: number | null) => {
     try {
       if (openTableId === null) return;
+      delete provisionalCounts.current[openTableId];
       updateData(await openTable(openTableId, guestCount));
       setSelectedTableId(openTableId);
     } catch (error) {
       setToast(error instanceof Error ? error.message : 'Không thể mở bàn.');
     }
   };
-  const handleAddRound = async (lines: OrderLine[]) => {
+  const handleAddRound = async (lines: OrderLine[]): Promise<OrderRound | null> => {
     try {
-      if (selectedTableId === null || !user) return;
-      updateData(await addRound(selectedTableId, lines, user.name));
+      if (selectedTableId === null || !user) return null;
+      const nextData = await addRound(selectedTableId, lines, user.name);
+      updateData(nextData);
+      return nextData.tables.find((table) => table.id === selectedTableId)?.rounds.at(-1) ?? null;
     } catch (error) {
       setToast(error instanceof Error ? error.message : 'Không thể gửi lượt gọi.');
+      return null;
     }
   };
-  const handleProvisional = async () => {
+  const handleProvisional = async (): Promise<number | null> => {
     try {
-      if (selectedTableId === null) return;
-      updateData(await markProvisional(selectedTableId));
-      setSelectedTableId(null);
+      if (selectedTableId === null) return null;
+      const previousCount = Math.max(
+        selectedTable?.provisionalCount ?? 0,
+        provisionalCounts.current[selectedTableId] ?? 0
+      );
+      const nextData = await markProvisional(selectedTableId);
+      const table = nextData.tables.find((item) => item.id === selectedTableId);
+      const printCount = Math.max(table?.provisionalCount ?? 0, previousCount + 1);
+      provisionalCounts.current[selectedTableId] = printCount;
+      if (table) table.provisionalCount = printCount;
+      setData(nextData);
       setToast('Đã ghi nhận in tạm tính.');
+      return printCount;
     } catch (error) {
       setToast(error instanceof Error ? error.message : 'Không thể in tạm tính.');
+      return null;
     }
   };
   const handlePayment = async (payment: PaymentDetails) => {
     try {
       if (paymentTableId === null) return;
       const result = await payTable(paymentTableId, payment);
+      delete provisionalCounts.current[paymentTableId];
       setData(result.data);
       setOpenTableId(null);
       setToast('');

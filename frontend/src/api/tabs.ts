@@ -21,6 +21,7 @@ interface TabSummary {
     total?: number;
     openedAt?: string;
     guestCount?: number | null;
+    provisionalCount?: number;
     rounds?: DiningTable['rounds'];
   }>;
 }
@@ -77,6 +78,7 @@ export async function getPosData(): Promise<PosData> {
       guestCount: table.guestCount ?? null,
       openedAt: table.openedAt ?? null,
       total: table.total ?? 0,
+      provisionalCount: table.provisionalCount,
       rounds: table.rounds ?? []
     })),
     completedBills: []

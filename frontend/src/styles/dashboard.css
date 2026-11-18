@@ -250,12 +250,24 @@ tbody tr:hover { background: #fbfcfa; }
 }
 
 @media print {
-  .sidebar, .topbar, .modal-header, .modal-footer, .menu-picker, .session-actions, .session-extra-actions, .text-button, .toast-region { display: none !important; }
-  .modal-backdrop { position: static; display: block; padding: 0; background: white; }
-  .modal, .modal-wide { width: 100%; max-width: none; box-shadow: none; }
-  .session-layout { display: block; min-height: 0; }
-  .session-order { padding: 12px; }
-  .sent-history { overflow: visible; }
+  @page { size: 80mm auto; margin: 0; }
+  body { min-width: 0; margin: 0; background: #fff; }
+  body > #root { display: none !important; }
+  body > .print-stage[data-active='true'] { display: block !important; width: 80mm; margin: 0; padding: 3mm; color: #000; background: #fff; font: 10pt/1.35 Arial, sans-serif; }
+  .print-stage .receipt-head { gap: 2mm; padding-bottom: 3mm; border-bottom: 1px dashed #555; color: #000; font-size: 9pt; }
+  .print-stage .receipt-head strong { color: #000; font-size: 11pt; }
+  .print-stage .receipt-lines { max-height: none; gap: 2mm; overflow: visible; padding: 3mm 0; border-bottom: 1px dashed #555; }
+  .print-stage .receipt-line, .print-stage .receipt-total { color: #000; font-size: 9pt; }
+  .print-stage .receipt-line strong, .print-stage .receipt-total strong { color: #000; }
+  .print-stage .receipt-total.grand { margin-top: 2mm; padding-top: 3mm; border-top: 1px solid #555; }
+  .kitchen-ticket > header { display: grid; gap: 1mm; padding-bottom: 2mm; border-bottom: 1px dashed #555; text-align: center; }
+  .kitchen-ticket > header strong:first-child { font-size: 12pt; }
+  .kitchen-ticket > header strong:last-child { font-size: 14pt; }
+  .kitchen-ticket-meta { display: grid; gap: 1mm; padding: 2mm 0; border-bottom: 1px dashed #555; }
+  .kitchen-ticket-lines { display: grid; gap: 2mm; padding-top: 3mm; }
+  .kitchen-ticket-lines div { display: grid; gap: 1mm; }
+  .kitchen-ticket-lines strong { font-size: 12pt; }
+  .kitchen-ticket-lines span { font-size: 9pt; }
 }
 
 .feature-content .page-heading { align-items: center; }
@@ -310,6 +322,15 @@ tbody tr:hover { background: #fbfcfa; }
 .receipt-line strong, .receipt-total strong { color: var(--ink); white-space: nowrap; }
 .receipt-total { padding-top: 7px; }
 .receipt-total.grand { margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--line); font-weight: 700; }
+.print-stage { display: none; }
+.ticket-previews { display: grid; gap: 9px; margin: 14px 0; }
+.ticket-previews h3 { margin: 0; font-size: 12px; }
+.kitchen-ticket-preview { padding: 10px; border: 1px dashed var(--line); border-radius: 5px; background: #fbfcfa; }
+.kitchen-ticket-preview header { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 10px; }
+.kitchen-ticket-preview header strong { color: var(--ink); }
+.kitchen-ticket-preview p { margin: 8px 0; font-size: 11px; }
+.kitchen-ticket-preview small { display: block; margin-top: 3px; color: var(--muted); }
+.kitchen-ticket-preview .text-button { margin-top: 3px; }
 
 @media (max-width: 900px) {
   .tap-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
