@@ -34,6 +34,7 @@ export interface ReportSummary {
 }
 
 export interface ReportKegLoss {
+  threshold: number;
   totalLossLiters: number;
   totalLossAmount: number;
   kegs: Array<Record<string, string | number | boolean>>;

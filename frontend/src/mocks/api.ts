@@ -3,7 +3,19 @@ import { getStoredSession } from '../lib/storage.ts';
 import { posService, MENU } from './tabs.ts';
 import type { ReportKegLoss, ReportSummary, ReportTopItems, ReportVoid } from '../types/index.ts';
 
-const adminResources = new Set(['menu', 'areas', 'staff', 'kegs', 'happy-hours', 'taps', 'shifts']);
+const adminResources = new Set([
+  'menu',
+  'menu-groups',
+  'menu-items',
+  'kitchen-stations',
+  'areas',
+  'tables',
+  'staff',
+  'kegs',
+  'happy-hours',
+  'taps',
+  'shifts'
+]);
 
 const reportSummary: ReportSummary = {
   revenue: 12840000,
@@ -14,17 +26,18 @@ const reportSummary: ReportSummary = {
 };
 
 const kegLoss: ReportKegLoss = {
+  threshold: 5,
   totalLossLiters: 6.5,
   totalLossAmount: 195000,
   kegs: [
-    { code: 'KEG-0007', beerName: 'Bia hơi Hà Nội', tapName: 'Vòi 1', capacityMl: 50000, soldMl: 46000, lossMl: 4000, lossPercent: 8, overThreshold: true },
-    { code: 'KEG-0005', beerName: 'Bia hơi Hải Phòng', tapName: 'Vòi 2', capacityMl: 30000, soldMl: 28800, lossMl: 1200, lossPercent: 4, overThreshold: false }
+    { kegId: 7, code: 'KEG-0007', beerName: 'Bia hơi Hà Nội', tapName: 'Vòi 1', capacityMl: 50000, soldMl: 46000, lossMl: 4000, lossPercent: 8, tappedAt: '2026-11-18T09:00:00.000Z', emptiedAt: '2026-11-18T22:10:00.000Z', overThreshold: true },
+    { kegId: 5, code: 'KEG-0005', beerName: 'Bia hơi Hải Phòng', tapName: 'Vòi 2', capacityMl: 30000, soldMl: 28800, lossMl: 1200, lossPercent: 4, tappedAt: '2026-11-17T09:20:00.000Z', emptiedAt: '2026-11-18T20:10:00.000Z', overThreshold: false }
   ]
 };
 
 const voids: ReportVoid[] = [
   { id: 1, table: 'Bàn 12', item: 'Khoai tây chiên', quantity: -1, amount: 45000, reason: 'Khách đổi ý' },
-  { id: 2, table: 'Bàn 08', item: 'Mực nướng', quantity: '-10%', amount: 13500, reason: 'Món lỗi' }
+  { id: 2, table: 'Bàn 08', item: 'Mực nướng', quantity: -1, amount: 13500, reason: 'Món lỗi' }
 ];
 
 const topItems: ReportTopItems[] = [
@@ -43,9 +56,25 @@ export async function mockApiRequest<T>(path: string, options: RequestInit = {})
   let result: unknown;
 
   if (path === '/auth/login' && method === 'POST') {
-    result = await mockLogin(String(body.email ?? ''), String(body.password ?? ''));
+    const session = await mockLogin(String(body.email ?? ''), String(body.password ?? ''));
+    const roleMap = { staff: 'COUNTER', manager: 'SHIFT_MANAGER', owner: 'OWNER' } as const;
+    result = {
+      token: session.token,
+      user: {
+        id: session.user.email === 'lan@biahoi.vn' ? 2 : session.user.email === 'minh@biahoi.vn' ? 3 : session.user.email === 'hung@biahoi.vn' ? 4 : 5,
+        fullName: session.user.name,
+        email: session.user.email,
+        role: roleMap[session.user.role]
+      }
+    };
   } else if (path === '/auth/me' && method === 'GET') {
-    result = getStoredSession()?.user ?? null;
+    const user = getStoredSession()?.user;
+    if (user) {
+      const roleMap = { staff: 'COUNTER', manager: 'SHIFT_MANAGER', owner: 'OWNER' } as const;
+      result = { id: user.email === 'lan@biahoi.vn' ? 2 : user.email === 'minh@biahoi.vn' ? 3 : user.email === 'hung@biahoi.vn' ? 4 : 5, fullName: user.name, email: user.email, role: roleMap[user.role] };
+    } else {
+      result = null;
+    }
   } else if (path.startsWith('/reports/today')) {
     result = reportSummary;
   } else if (path.startsWith('/reports/keg-loss')) {
@@ -65,12 +94,19 @@ export async function mockApiRequest<T>(path: string, options: RequestInit = {})
       tables: posService.getData().tables.filter((table) => table.areaId === area.id).map((table) => ({ id: table.id, code: String(table.id) }))
     }));
   } else if (path === '/tabs/summary') {
+    const tables = posService.getData().tables;
+    const occupied = tables.filter((table) => table.status !== 'empty').length;
+    const openAmount = tables.reduce((sum, table) => table.status !== 'empty' ? sum + table.total : sum, 0);
     result = {
-      tables: posService.getData().tables.map((table) => ({
+      occupied,
+      totalTables: tables.length,
+      openAmount,
+      tables: tables.map((table) => ({
         tableId: table.id,
         areaId: table.areaId,
         code: String(table.id),
         status: table.status === 'empty' ? 'EMPTY' : table.status === 'provisional' ? 'PROVISIONAL_PRINTED' : 'OCCUPIED',
+        tabId: table.status === 'empty' ? undefined : 300 + table.id,
         total: table.total,
         openedAt: table.openedAt,
         guestCount: table.guestCount,

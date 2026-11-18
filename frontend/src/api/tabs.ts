@@ -9,11 +9,15 @@ interface ApiArea {
 }
 
 interface TabSummary {
+  occupied: number;
+  totalTables: number;
+  openAmount: number;
   tables: Array<{
     tableId: number;
     areaId: string | number;
     code: string;
     status: 'EMPTY' | 'OCCUPIED' | 'PROVISIONAL_PRINTED';
+    tabId?: number;
     total?: number;
     openedAt?: string;
     guestCount?: number | null;
@@ -26,6 +30,7 @@ interface ApiBill {
   subtotal: number;
   discount: number;
   total: number;
+  paid: number;
   change: number;
   paidAt: string;
   lines: Array<{
