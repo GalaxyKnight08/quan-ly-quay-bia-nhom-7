@@ -11,6 +11,13 @@ cp .env.example .env
 npm run dev
 ```
 
+Hoặc chạy trực tiếp từ thư mục gốc:
+
+```sh
+npm --prefix frontend install
+npm run dev
+```
+
 Mặc định `VITE_USE_MOCK=true` để chạy với dữ liệu demo lưu trong trình duyệt. Đặt `VITE_USE_MOCK=false` và cấu hình `VITE_API_BASE_URL` trong `.env` để dùng backend. Chạy `npm run typecheck` để kiểm tra kiểu hoặc `npm run build` để tạo bản production tại `frontend/dist/`.
 
 Đăng nhập demo (mật khẩu `123456`):
